@@ -27,8 +27,10 @@ public class KanbanPlugin extends UserviewMenu {
         PluginManager pluginManager = (PluginManager) applicationContext.getBean("pluginManager");
 
         Map<String, Object> dataModel = new HashMap<>();
+        dataModel.put("className", getClassName());
 
-        return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/KanbanUserView.ftl", null);
+        return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/KanbanUserView.ftl",
+                null);
     }
 
     @Override

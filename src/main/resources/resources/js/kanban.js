@@ -1,7 +1,10 @@
-var kanban = new Jkanban("#kanban", {
+var kanban = new jKanban({
+    element: "#kanban",
+    gutter: "10px",
+    widthBoard: "250px",
     boards: [
-        { name: "To Do", id: "1", cards: [] },
-        { name: "In Progress", id: "2", cards: [] },
-        { name: "Done", id: "3", cards: [] }
+        { id: "1", title: "To Do", item: [] },
+        { id: "2", title: "In Progress", item: [] },
+        { id: "3", title: "Done", item: [] }
     ]
 });
