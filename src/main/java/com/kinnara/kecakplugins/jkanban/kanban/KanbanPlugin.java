@@ -5,7 +5,6 @@ import org.joget.apps.userview.model.UserviewMenu;
 import org.joget.plugin.base.PluginManager;
 import org.springframework.context.ApplicationContext;
 
-import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -19,7 +18,7 @@ public class KanbanPlugin extends UserviewMenu {
 
     @Override
     public String getIcon() {
-        return null;
+        return "<i class=\"fas fa-table\"></i>";
     }
 
     @Override
@@ -44,7 +43,7 @@ public class KanbanPlugin extends UserviewMenu {
 
     @Override
     public String getName() {
-        return "J Kanban";
+        return "JKanban";
     }
 
     @Override
@@ -62,7 +61,7 @@ public class KanbanPlugin extends UserviewMenu {
 
     @Override
     public String getLabel() {
-        return "J Kanban";
+        return "JKanban";
     }
 
     @Override
@@ -72,6 +71,6 @@ public class KanbanPlugin extends UserviewMenu {
 
     @Override
     public String getPropertyOptions() {
-        return "";
+        return AppUtil.readPluginResource(getClassName(), "/properties/userview/JKanbanMenu.json");
     }
 }
