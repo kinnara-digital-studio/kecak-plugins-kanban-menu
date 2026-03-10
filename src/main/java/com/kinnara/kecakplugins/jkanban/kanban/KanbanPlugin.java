@@ -8,6 +8,7 @@ import org.springframework.context.ApplicationContext;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ResourceBundle;
 
 public class KanbanPlugin extends UserviewMenu {
 
@@ -48,7 +49,10 @@ public class KanbanPlugin extends UserviewMenu {
 
     @Override
     public String getVersion() {
-        return getClass().getPackage().getImplementationVersion();
+        PluginManager pluginManager = (PluginManager) AppUtil.getApplicationContext().getBean("pluginManager");
+        ResourceBundle resourceBundle = pluginManager.getPluginMessageBundle(getClassName(), "/messages/BuildNumber");
+        String buildNumber = resourceBundle.getString("buildNumber");
+        return buildNumber;
     }
 
     @Override
