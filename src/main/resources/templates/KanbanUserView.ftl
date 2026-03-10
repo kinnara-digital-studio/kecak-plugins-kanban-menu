@@ -44,24 +44,95 @@
         background-color: #4CAF50;
         border: none;
         color: white;
-        padding: 7px 15px;
+        padding: 6px 12px;
         margin: 10px;
         text-align: center;
         text-decoration: none;
         display: inline-block;
-        font-size: 16px;
+        font-size: 14px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .custom-button:hover {
+        background-color: #45a049;
+      }
+
+      .control-panel {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-bottom: 1px solid #e7e7e7;
+        margin-bottom: 20px;
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .control-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .control-input {
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        color: white;
+      }
+      
+      .btn-primary { background: #2196F3; }
+      .btn-primary:hover { background: #1976D2; }
+      
+      .btn-success { background: #4CAF50; }
+      .btn-success:hover { background: #388E3C; }
+      
+      .btn-danger { background: #f44336; }
+      .btn-danger:hover { background: #d32f2f; }
+      
+      .itemform {
+          margin-bottom: 10px;
+      }
+      .itemform textarea {
+          width: 100%;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          padding: 5px;
+          box-sizing: border-box;
+      }
+      .itemform .form-group {
+          margin-bottom: 5px;
       }
     </style>
   </head>
   <body>
+    <div class="control-panel">
+      <div class="control-group">
+        <input type="text" id="newBoardTitle" class="control-input" placeholder="Board Title..." />
+        <button id="addBoardBtn" class="btn btn-primary">Add Board</button>
+      </div>
+
+      <div class="control-group">
+        <select id="boardSelect" class="control-input">
+          <option value="_todo">To Do</option>
+          <option value="_working">Working</option>
+          <option value="_done">Done</option>
+        </select>
+        <button id="removeBoardBtn" class="btn btn-danger">Remove Selected Board</button>
+      </div>
+    </div>
+    
     <div id="myKanban"></div>
-    <button id="addDefault">Add "Default" board</button>
-    <br />
-    <button id="addToDo">Add element in "To Do" Board</button>
-    <br />
-    <button id="removeBoard">Remove "Done" Board</button>
-    <br />
-    <button id="removeElement">Remove "My Task Test"</button>
 
     <script src="${request.contextPath}/plugin/${className}/node_modules/jkanban/dist/jkanban.js"></script>
     <script>
@@ -110,7 +181,7 @@
         boards: [
           {
             id: "_todo",
-            title: "To Do (Can drop item only in working)",
+            title: "To Do",
             class: "info,good",
             dragTo: ["_working"],
             item: [
@@ -138,7 +209,7 @@
           },
           {
             id: "_working",
-            title: "Working (Try drag me too)",
+            title: "Working",
             class: "warning",
             item: [
               {
@@ -151,7 +222,7 @@
           },
           {
             id: "_done",
-            title: "Done (Can drop item only in working)",
+            title: "Done",
             class: "success",
             dragTo: ["_working"],
             item: [
@@ -166,47 +237,49 @@
         ]
       });
 
-      var toDoButton = document.getElementById("addToDo");
-      toDoButton.addEventListener("click", function() {
-        KanbanTest.addElement("_todo", {
-          title: "Test Add"
-        });
-      });
+      function updateBoardSelect() {
+          var select = document.getElementById("boardSelect");
+          select.innerHTML = '';
+          var boards = document.querySelectorAll('.kanban-board');
+          boards.forEach(function(board) {
+              var id = board.getAttribute('data-id');
+              var title = board.querySelector('.kanban-title-board').textContent;
+              var option = document.createElement('option');
+              option.value = id;
+              option.textContent = title;
+              select.appendChild(option);
+          });
+      }
 
-      var addBoardDefault = document.getElementById("addDefault");
-      addBoardDefault.addEventListener("click", function() {
+      document.getElementById("addBoardBtn").addEventListener("click", function() {
+        var titleInput = document.getElementById("newBoardTitle");
+        var title = titleInput.value.trim();
+        
+        if(title === "") {
+            alert("Please enter a board title");
+            return;
+        }
+
+        var newId = "_" + title.toLowerCase().replace(/\s+/g, "");
+        
         KanbanTest.addBoards([
           {
-            id: "_default",
-            title: "Kanban Default",
-            item: [
-              {
-                title: "Default Item"
-              },
-              {
-                title: "Default Item 2"
-              },
-              {
-                title: "Default Item 3"
-              }
-            ]
+            id: newId,
+            title: title,
+            item: []
           }
         ]);
+        
+        titleInput.value = "";
+        updateBoardSelect();
       });
 
-      var removeBoard = document.getElementById("removeBoard");
-      removeBoard.addEventListener("click", function() {
-        KanbanTest.removeBoard("_done");
-      });
-
-      var removeElement = document.getElementById("removeElement");
-      removeElement.addEventListener("click", function() {
-        KanbanTest.removeElement("_test_delete");
-      });
-
-      var allEle = KanbanTest.getBoardElements("_todo");
-      allEle.forEach(function(item, index) {
-        //console.log(item);
+      document.getElementById("removeBoardBtn").addEventListener("click", function() {
+        var select = document.getElementById("boardSelect");
+        if(select.value) {
+            KanbanTest.removeBoard(select.value);
+            updateBoardSelect();
+        }
       });
     </script>
   </body>
