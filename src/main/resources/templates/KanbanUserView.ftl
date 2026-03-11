@@ -140,9 +140,9 @@
         element: "#myKanban",
         gutter: "10px",
         widthBoard: "450px",
-        itemHandleOptions:{
+        <#--  itemHandleOptions:{
           enabled: true,
-        },
+        },  -->
         click: function(el) {
           console.log("Trigger on all items click!");
         },
@@ -183,7 +183,7 @@
             id: "_todo",
             title: "To Do",
             class: "info,good",
-            dragTo: ["_working"],
+            <#--  dragTo: ["_working"],  -->
             item: [
               {
                 id: "_test_delete",
@@ -224,7 +224,7 @@
             id: "_done",
             title: "Done",
             class: "success",
-            dragTo: ["_working"],
+            <#--  dragTo: ["_working"],  -->
             item: [
               {
                 title: "All right"
