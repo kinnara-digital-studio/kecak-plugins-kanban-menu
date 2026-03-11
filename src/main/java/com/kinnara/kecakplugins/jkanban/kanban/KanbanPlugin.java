@@ -29,6 +29,11 @@ public class KanbanPlugin extends UserviewMenu {
         Map<String, Object> dataModel = new HashMap<>();
         dataModel.put("className", getClassName());
 
+        String label = getPropertyString("labelField");
+        Map<String, String>[] boards = getPropertyGrid("options");
+        dataModel.put("label", label);
+        dataModel.put("boards", boards);
+
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/KanbanUserView.ftl",
                 null);
     }

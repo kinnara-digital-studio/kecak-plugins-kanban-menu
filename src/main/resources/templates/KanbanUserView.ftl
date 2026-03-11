@@ -147,8 +147,24 @@
           console.log("Trigger on all items click!");
         },
         dropEl: function(el, target, source, sibling){
-          console.log(target.parentElement.getAttribute('data-id'));
-          console.log(el, target, source, sibling)
+          var targetBoardId = target && target.parentElement
+            ? target.parentElement.getAttribute('data-id')
+            : null;
+          var sourceBoardId = source && source.parentElement
+            ? source.parentElement.getAttribute('data-id')
+            : null;
+
+          if (!targetBoardId || !sourceBoardId) {
+            console.warn("dropEl: missing board id", { targetBoardId, sourceBoardId });
+            return;
+          }
+
+          if (targetBoardId === sourceBoardId) {
+            // Same board, do not update status
+            return;
+          }
+
+          updateItemStatus(el, targetBoardId, sourceBoardId);
         },
         buttonClick: function(el, boardId) {
           console.log(el);
@@ -236,6 +252,12 @@
           }
         ]
       });
+
+      function updateItemStatus(el, targetBoardId, sourceBoardId) {
+        // TODO: replace with real callback (AJAX / fetch) to persist status
+        var itemId = el.getAttribute('data-eid');
+        console.log("Update status", { itemId: itemId, from: sourceBoardId, to: targetBoardId });
+      }
 
       function updateBoardSelect() {
           var select = document.getElementById("boardSelect");
