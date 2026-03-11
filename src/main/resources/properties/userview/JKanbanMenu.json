@@ -21,6 +21,42 @@
         "type": "textfield",
         "required": "true",
         "value": "My Menu"
+      },
+      {
+        "name": "options",
+        "label": "Options",
+        "type": "grid",
+        "columns": [
+          {
+            "key": "value",
+            "label": "Value"
+          },
+          {
+            "key": "label",
+            "label": "Label"
+          }
+        ]
+      },
+      {
+        "name" : "dataListId",
+        "label": "DataList",
+        "type" : "selectbox",
+        "required" : "true",
+        "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/datalist/options"
+      },
+      {
+        "name": "labelField",
+        "label": "Label Field",
+        "type": "textfield",
+        "required": "true",
+        "value": "label"
+      },
+      {
+        "name": "statusField",
+        "label": "Status Field",
+        "type": "textfield",
+        "required": "true",
+        "value": "status"
       }
     ]
   }
