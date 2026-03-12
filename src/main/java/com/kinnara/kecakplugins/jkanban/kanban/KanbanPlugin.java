@@ -38,9 +38,11 @@ public class KanbanPlugin extends UserviewMenu {
         dataModel.put("boards", boards);
 
         final String dataListId = getPropertyString("dataListId");
+        final String formId = getPropertyString("formId");
         final AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
 
         dataModel.put("dataListId", dataListId);
+        dataModel.put("formId", formId);
         dataModel.put("appId", appDefinition.getAppId());
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/KanbanUserView.ftl",

@@ -72,19 +72,20 @@
 
       var apiUrl = "${request.contextPath}/web/json/data/app/${appId}/datalist/${dataListId}";
 
+
       var boardsConfig = [
         <#if boards?? && boards?has_content>
           <#list boards as board>
-            { id: "${board.value!''}", title: "${board.label!''}" }<#if board?has_next>,</#if>
+            { id: "${board.value!''}", title: "${board.label!''}", colour: "${board.colour!''}" }<#if board?has_next>,</#if>
           </#list>
         <#else>
-          { id: "todo",       title: "To Do" },
-          { id: "inprogress", title: "In Progress" },
-          { id: "done",       title: "Done" }
+          { id: "todo",       title: "To Do",       colour: "#2196F3" },
+          { id: "inprogress", title: "In Progress", colour: "#FFC107" },
+          { id: "done",       title: "Done",        colour: "#4CAF50" }
         </#if>
       ];
 
-      var KanbanBoard = null;
+      var kanbanBoard = null;
 
       function buildKanban(items) {
 
@@ -110,11 +111,12 @@
 
         document.getElementById("myKanban").innerHTML = "";
 
-        KanbanBoard = new jKanban({
+        kanbanBoard = new jKanban({
           element: "#myKanban",
           gutter: "10px",
           widthBoard: "300px",
-          <#--  dropEl: function(el, target, source, sibling) {
+          dragBoards: false,
+          dropEl: function(el, target, source, sibling) {
             var targetBoardId = target && target.parentElement
               ? target.parentElement.getAttribute("data-id")
               : null;
@@ -126,23 +128,59 @@
             if (targetBoardId === sourceBoardId) return;
 
             updateItemStatus(el, targetBoardId, sourceBoardId);
-          },  -->
-          dropEl: function(el, target, source, sibling){
-            console.log(target.parentElement.getAttribute('data-id'));
-            console.log(el, target, source, sibling)
           },
           boards: boards
+        });
+
+        boardsConfig.forEach(function(b) {
+          if (b.colour) {
+            var boardHeader = document.querySelector('.kanban-board[data-id="' + b.id + '"] .kanban-board-header');
+            if (boardHeader) {
+              boardHeader.style.backgroundColor = b.colour;
+              <#--  boardHeader.style.color = "#ffffff";  -->
+            }
+          }
         });
 
         document.getElementById("kanban-loading").style.display = "none";
         document.getElementById("myKanban").style.display       = "block";
       }
 
-      <#--  // Called when a card is dragged to a different board
       function updateItemStatus(el, targetBoardId, sourceBoardId) {
         var itemId = el.getAttribute("data-eid");
-        console.log("Status changed", { id: itemId, from: sourceBoardId, to: targetBoardId });
-      }  -->
+
+        var targetBoard = boardsConfig.find(function(b) { return b.id === targetBoardId; });
+        var targetBoardTitle = targetBoard ? targetBoard.title : targetBoardId;
+
+        console.log("Status changed", { id: itemId, from: sourceBoardId, to: targetBoardId, boardTitle: targetBoardTitle });
+
+        var formData = {};
+        formData[statusField]   = targetBoardId; 
+
+        var updateUrl = "${request.contextPath}/web/json/data/app/${appId}/form/${formId!''}/" + itemId;
+
+        jQuery.ajax({
+          url:         updateUrl,
+          method:      "PUT",
+          contentType: "application/json",
+          data:        JSON.stringify(formData),
+          dataType:    "json",
+          success: function(resp) {
+            console.log("Status updated", resp);
+          },
+          error: function(xhr, status, error) {
+            console.error("Failed to update status", { itemId: itemId, error: error });
+
+            var itemData = {
+              id: el.getAttribute("data-eid"),
+              title: el.innerHTML
+            };
+
+            kanbanBoard.removeElement(itemData.id);
+            kanbanBoard.addElement(sourceBoardId, itemData);
+          }
+        });
+      }
 
       jQuery.ajax({
         url:      apiUrl,
