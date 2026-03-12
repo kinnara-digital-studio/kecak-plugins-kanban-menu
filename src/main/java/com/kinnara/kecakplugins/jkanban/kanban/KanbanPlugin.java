@@ -1,5 +1,6 @@
 package com.kinnara.kecakplugins.jkanban.kanban;
 
+import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.userview.model.UserviewMenu;
 import org.joget.plugin.base.PluginManager;
@@ -30,9 +31,17 @@ public class KanbanPlugin extends UserviewMenu {
         dataModel.put("className", getClassName());
 
         String label = getPropertyString("labelField");
+        String status = getPropertyString("statusField");
         Map<String, String>[] boards = getPropertyGrid("options");
         dataModel.put("label", label);
+        dataModel.put("status", status);
         dataModel.put("boards", boards);
+
+        final String dataListId = getPropertyString("dataListId");
+        final AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
+
+        dataModel.put("dataListId", dataListId);
+        dataModel.put("appId", appDefinition.getAppId());
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/KanbanUserView.ftl",
                 null);
