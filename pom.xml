@@ -165,7 +165,7 @@
         <dependency>
             <groupId>com.kinnarastudio</groupId>
             <artifactId>kinnara-commons</artifactId>
-            <version>3.0.0</version>
+            <version>4.1.1</version>
         </dependency>
         <!-- Change plugin specific dependencies here -->
         

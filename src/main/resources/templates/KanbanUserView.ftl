@@ -72,10 +72,64 @@
       .itemform .form-group {
         margin-bottom: 5px;
       }
+
+      /* Item Actions Menu */
+      .kanban-item {
+        position: relative;
+      }
+      .item-content {
+        padding-right: 25px; /* space for the dots */
+      }
+      .item-actions {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+      }
+      .dropdown-menu {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 25px;
+        background: white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        z-index: 1000;
+        min-width: 100px;
+        padding: 5px 0;
+      }
+      .dropdown-menu.show {
+        display: block;
+      }
+      .dropdown-item {
+        display: block;
+        padding: 8px 15px;
+        text-decoration: none;
+        color: #333;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .dropdown-item:hover {
+        background: #f0f0f5;
+        color: #2196F3;
+      }
+      .btn-dots {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        padding: 0 5px;
+        color: #888;
+        line-height: 1;
+      }
+      .btn-dots:hover {
+        color: #333;
+      }
     </style>
   </head>
   <body>
 
+    <input type='hidden' id='${elementUniqueKey}-jsonForm' value="${jsonForm!}" >
     <div id="kanban-loading">Loading Kanban data...</div>
     <div id="myKanban" style="display:none;"></div>
 
@@ -104,6 +158,123 @@
 
       var kanbanBoard = null;
 
+      function popupForm(elementId, appId, appVersion, jsonForm, nonce, args, data, height, width) {
+          let formUrl = '${request.contextPath}/web/app/' + appId + '/' + appVersion + '/form/embed?_submitButtonLabel=Submit';
+          let frameId = args.frameId = 'Frame_' + elementId;
+
+          if (data && data.id) {
+              if (formUrl.indexOf("?") != -1) {
+                  formUrl += "&";
+              } else {
+                  formUrl += "?";
+              }
+              formUrl += "id=" + data.id;
+          }
+          formUrl += UI.userviewThemeParams();
+
+          var params = {
+              _json : JSON.stringify(jsonForm ? jsonForm : {}),
+              _callback : 'onSubmitted',
+              _setting : JSON.stringify(args ? args : {}).replace(/"/g, "'"),
+              _jsonrow : JSON.stringify(data ? data : {}),
+              _nonce : nonce
+          };
+
+          JPopup.show(frameId, formUrl, params, "", width, height);
+      }
+
+      function onSubmitted(args) {
+          let result = JSON.parse(args.result);
+          let frameId = args.frameId;
+
+          if (JPopup) {
+            JPopup.hide(frameId);
+          }
+
+          if (result && result.id) {
+            var updatedId = result.id;
+            var updatedLabel = result[labelField] || "(no label)";
+            var updatedStatus = result[statusField] || "";
+
+            var itemData = {
+              id: updatedId,
+              title: createItemHtml(updatedLabel)
+            };
+
+            kanbanBoard.removeElement(updatedId);
+            if (updatedStatus) {
+              kanbanBoard.addElement(updatedStatus, itemData);
+            }
+          }
+      }
+
+      var jsonForm = $('input#${elementUniqueKey}-jsonForm').val() ? JSON.parse($('input#${elementUniqueKey}-jsonForm').val()) : {};
+      var nonce = '${nonce!}';
+      var appVersion = "${appVersion}";
+
+      function createItemHtml(label) {
+        return '<div class="item-content">' + label + '</div>' +
+               '<div class="item-actions">' +
+                 '<button type="button" class="btn-dots" onclick="toggleDropdown(event, this)">&#8942;</button>' +
+                 '<div class="dropdown-menu">' +
+                   '<a class="dropdown-item" onclick="showEditForm(event, this)">Edit</a>' +
+                   '<a class="dropdown-item" onclick="confirmDelete(event, this)">Delete</a>' +
+                 '</div>' +
+               '</div>';
+      }
+
+      function toggleDropdown(event, btn) {
+        event.stopPropagation();
+        var menu = btn.nextElementSibling;
+        var isShowing = menu.classList.contains('show');
+        
+        document.querySelectorAll('.dropdown-menu.show').forEach(function(m) {
+          m.classList.remove('show');
+        });
+
+        if (!isShowing) {
+          menu.classList.add('show');
+        }
+      }
+
+      document.addEventListener('click', function() {
+        document.querySelectorAll('.dropdown-menu.show').forEach(function(m) {
+          m.classList.remove('show');
+        });
+      });
+
+      function showEditForm(event, btn) {
+        event.stopPropagation();
+        var menu = btn.closest('.dropdown-menu');
+        if (menu) menu.classList.remove('show');
+
+        var kanbanItem = btn.closest('.kanban-item');
+        var itemId = kanbanItem.getAttribute("data-eid");
+
+        // Use popupForm explicitly with data containing the item id
+        var data = { id: itemId };
+        var height = "800";
+        var width = "900";
+        var args = {}; 
+        
+        var appId = "${appId!''}";
+        var formId = "${formId!''}";
+        
+        popupForm(formId, appId, appVersion, jsonForm, nonce, args, data, height, width);
+      }
+
+      function confirmDelete(event, btn) {
+        event.stopPropagation();
+        var menu = btn.closest('.dropdown-menu');
+        if (menu) menu.classList.remove('show');
+
+        if (confirm("Are you sure you want to delete this item?")) {
+          var kanbanItem = btn.closest('.kanban-item');
+          var sourceBoardId = kanbanItem.closest('.kanban-board').getAttribute("data-id");
+          deleteItem(kanbanItem, sourceBoardId);
+        }
+      }
+
       function buildKanban(items) {
 
         var boards = boardsConfig.map(function(boardCfg) {
@@ -114,7 +285,7 @@
             if (itemStatus === boardCfg.id) {
               boardItems.push({
                 id:    String(record["id"] || record["_id"] || record["$value"] || ""),
-                title: String(record[labelField] || "(no label)")
+                title: createItemHtml(String(record[labelField] || "(no label)"))
               });
             }
           });
@@ -259,7 +430,7 @@
             
             kanbanBoard.addElement(sourceBoardId, {
               id: newId,
-              title: label
+              title: createItemHtml(label)
             });
 
             if (formElement && formElement.parentNode) {
@@ -280,6 +451,57 @@
         
       }
 
+      function deleteItem(el, sourceBoardId){
+        var itemId = el.getAttribute("data-eid");
+        var deleteUrl = "${request.contextPath}/web/json/data/app/${appId}/form/${formId!''}/" + itemId;
+
+        jQuery.ajax({
+          url:         deleteUrl,
+          method:      "DELETE",
+          contentType: "application/json",
+          dataType:    "json",
+          success: function(resp) {
+            console.log("Item Deleted", resp);
+            kanbanBoard.removeElement(itemId);
+          },
+          error: function(xhr, status, error) {
+            console.error("Failed to delete item", { error: error });
+            alert("Failed to delete item. Please try again.");
+          }
+        });
+        
+      }
+
+      function editItem(el, sourceBoardId, label, originalHtml){
+        var itemId = el.getAttribute("data-eid");
+
+        var formData = {};
+        formData[labelField] = label;
+        formData[statusField] = sourceBoardId;
+
+        var editUrl = "${request.contextPath}/web/json/data/app/${appId}/form/${formId!''}/" + itemId;
+
+        jQuery.ajax({
+          url:         editUrl,
+          method:      "PUT",
+          contentType: "application/json",
+          data:        JSON.stringify(formData),
+          dataType:    "json",
+          success: function(resp) {
+            console.log("Item Updated", resp);
+            kanbanBoard.removeElement(itemId);        
+            kanbanBoard.addElement(sourceBoardId, {
+              id: itemId,
+              title: createItemHtml(label)
+            });
+          },
+          error: function(xhr, status, error) {
+            console.error("Failed to update item", { error: error });
+            alert("Failed to update item. Please try again.");
+          }
+        });
+      }
+
 
       jQuery.ajax({
         url:      apiUrl,
@@ -297,5 +519,6 @@
       });
 
     </script>
+
   </body>
 </html>
