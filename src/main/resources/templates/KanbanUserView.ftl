@@ -41,9 +41,25 @@
       }
       .btn-primary { background: #2196F3; }
       .btn-primary:hover { background: #1976D2; }
+      .btn-default { background: #9e9e9e; }
+      .btn-default:hover { background: #757575; }
+
+      .kanban-add-btn {
+        width: 100%;
+        margin-top: 10px;
+        padding: 8px;
+        background: #e0e0e0;
+        color: #333;
+        font-weight: bold;
+      }
+      .kanban-add-btn:hover { background: #d5d5d5; }
 
       .itemform {
         margin-bottom: 10px;
+        padding: 10px;
+        background: #fff;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12);
       }
       .itemform textarea {
         width: 100%;
@@ -51,6 +67,7 @@
         border-radius: 4px;
         padding: 5px;
         box-sizing: border-box;
+        resize: vertical;
       }
       .itemform .form-group {
         margin-bottom: 5px;
@@ -116,6 +133,47 @@
           gutter: "10px",
           widthBoard: "300px",
           dragBoards: false,
+          itemAddOptions: {
+            enabled: true,
+            content: '+ Add Item',
+            class: 'btn kanban-add-btn',
+            footer: true
+          },
+          buttonClick: function(el, boardId) {
+            var existingForm = el.parentNode.querySelector('.itemform');
+            if (existingForm) {
+              existingForm.querySelector("textarea").focus();
+              return;
+            }
+
+            var formItem = document.createElement("form");
+            formItem.setAttribute("class", "itemform");
+            formItem.innerHTML =
+              '<div class="form-group"><textarea placeholder="Enter item label" required></textarea></div>' +
+              '<div class="form-group" style="display:flex; gap: 5px;">' +
+              '<button type="submit" class="btn btn-primary">Submit</button>' +
+              '<button type="button" class="btn btn-default btn-cancel">Cancel</button>' +
+              '</div>';
+
+
+            kanbanBoard.addForm(boardId, formItem);
+            
+            formItem.querySelector("textarea").focus();
+
+            formItem.addEventListener("submit", function(e) {
+              e.preventDefault();
+              var text = e.target[0].value;
+              var submitBtn = formItem.querySelector('button[type="submit"]');
+              submitBtn.disabled = true;
+              submitBtn.textContent = "Saving...";
+              
+              addItem(text, boardId, formItem);
+            });
+            
+            formItem.querySelector(".btn-cancel").addEventListener("click", function() {
+              formItem.parentNode.removeChild(formItem);
+            });
+          },
           dropEl: function(el, target, source, sibling) {
             var targetBoardId = target && target.parentElement
               ? target.parentElement.getAttribute("data-id")
@@ -181,6 +239,47 @@
           }
         });
       }
+
+      function addItem(label, sourceBoardId, formElement){
+        var formData = {};
+        formData[labelField] = label;
+        formData[statusField] = sourceBoardId;
+
+        var createUrl = "${request.contextPath}/web/json/data/app/${appId}/form/${formId!''}"
+
+        jQuery.ajax({
+          url:         createUrl,
+          method:      "POST",
+          contentType: "application/json",
+          data:        JSON.stringify(formData),
+          dataType:    "json",
+          success: function(resp) {
+            console.log("Item Created", resp);
+            var newId = (resp && resp.id) ? resp.id : ("new_" + Math.random().toString(36).substr(2, 9));
+            
+            kanbanBoard.addElement(sourceBoardId, {
+              id: newId,
+              title: label
+            });
+
+            if (formElement && formElement.parentNode) {
+              formElement.parentNode.removeChild(formElement);
+            }
+          },
+          error: function(xhr, status, error) {
+            console.error("Failed to create item", { error: error });
+            alert("Failed to create item. Please try again.");
+            
+            if (formElement) {
+              var submitBtn = formElement.querySelector('button[type="submit"]');
+              submitBtn.disabled = false;
+              submitBtn.textContent = "Submit";
+            }
+          }
+        });
+        
+      }
+
 
       jQuery.ajax({
         url:      apiUrl,
