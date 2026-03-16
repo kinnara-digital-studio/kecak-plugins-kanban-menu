@@ -215,15 +215,72 @@
       var nonce = '${nonce!}';
       var appVersion = "${appVersion}";
 
+      var datalistRowActions = [
+        <#if rowActions??>
+            <#list rowActions as action>
+                {
+                    id: "${action.id!''}",
+                    label: "${action.label!''}",
+                }<#if action?has_next>,</#if>
+            </#list>
+        </#if>
+      ];
+
       function createItemHtml(label) {
+        var dropdownHtml = '';
+
+        dropdownHtml += '<a class="dropdown-item" onclick="showEditForm(event, this)">Edit</a>';
+        dropdownHtml += '<a class="dropdown-item" onclick="confirmDelete(event, this)">Delete</a>';
+
+        if (datalistRowActions && datalistRowActions.length > 0) {
+            datalistRowActions.forEach(function(action) {
+                if (action.id.toLowerCase() !== 'edit' && action.id.toLowerCase() !== 'delete') {
+                    dropdownHtml += '<a class="dropdown-item" onclick="triggerAction(event, \'' + action.id + '\', this)">' + action.label + '</a>';
+                }
+            });
+        }
+
         return '<div class="item-content">' + label + '</div>' +
                '<div class="item-actions">' +
                  '<button type="button" class="btn-dots" onclick="toggleDropdown(event, this)">&#8942;</button>' +
                  '<div class="dropdown-menu">' +
-                   '<a class="dropdown-item" onclick="showEditForm(event, this)">Edit</a>' +
-                   '<a class="dropdown-item" onclick="confirmDelete(event, this)">Delete</a>' +
+                   dropdownHtml +
                  '</div>' +
                '</div>';
+      }
+
+      function triggerAction(event, actionId, btn) {
+          event.stopPropagation();
+
+          var menu = btn.closest('.dropdown-menu');
+          if (menu) menu.classList.remove('show');
+          
+          // Ambil ID item dari elemen HTML (sama seperti showEditForm)
+          var kanbanItem = btn.closest('.kanban-item');
+          var itemId = kanbanItem.getAttribute("data-eid");
+
+          var actionUrl = "${request.contextPath}/web/json/data/app/${appId}/" + appVersion + "/datalist/${dataListId!''}/action/" + actionId + "?id=" + itemId;
+
+          if (actionId === 'edit') {
+             showEditForm(event, btn);
+             return;
+          }
+
+          if (confirm("Are you sure you want to execute this action?")) {
+              jQuery.ajax({
+                  url: actionUrl,
+                  method: "POST",
+                  contentType: "application/json",
+                  success: function(resp) {
+                      console.log("Action Triggered", resp);
+                      alert("Action executed successfully.");
+                  },
+                  error: function(xhr) {
+                      console.error("Failed to execute action", xhr);
+                      alert("Failed to execute action.");
+                  }
+              });
+          }
       }
 
       function toggleDropdown(event, btn) {
@@ -254,7 +311,6 @@
         var kanbanItem = btn.closest('.kanban-item');
         var itemId = kanbanItem.getAttribute("data-eid");
 
-        // Use popupForm explicitly with data containing the item id
         var data = { id: itemId };
         var height = "800";
         var width = "900";

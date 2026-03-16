@@ -2,22 +2,25 @@ package com.kinnara.kecakplugins.jkanban.kanban;
 
 import com.kinnarastudio.commons.Try;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.joget.apps.app.dao.DatalistDefinitionDao;
 import org.joget.apps.app.dao.FormDefinitionDao;
 import org.joget.apps.app.model.AppDefinition;
+import org.joget.apps.app.model.DatalistDefinition;
 import org.joget.apps.app.model.FormDefinition;
 import org.joget.apps.app.service.AppUtil;
+import org.joget.apps.datalist.model.DataList;
+import org.joget.apps.datalist.model.DataListAction;
+import org.joget.apps.datalist.service.DataListService;
 import org.joget.apps.form.service.FormService;
 import org.joget.apps.form.service.FormUtil;
 import org.joget.apps.userview.model.UserviewMenu;
+import org.joget.commons.util.LogUtil;
 import org.joget.commons.util.SecurityUtil;
 import org.joget.plugin.base.PluginManager;
 import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
 
 public class KanbanPlugin extends UserviewMenu {
 
@@ -63,6 +66,26 @@ public class KanbanPlugin extends UserviewMenu {
 
         String elementUniqueKey = FormUtil.getUniqueKey();
         dataModel.put("elementUniqueKey", elementUniqueKey);
+
+        List<Map<String, String>> rowActionsInfos = new ArrayList<>();
+
+        final DataList dataList = getDataList(dataListId);
+
+        final DataListAction[] rowActions = dataList.getRowActions();
+
+        for (int i = 0; i < rowActions.length; i++) {
+            LogUtil.info(getClassName(), rowActions[i].getPropertyString("id"));
+        }
+
+        if (rowActions != null) {
+            for (org.joget.apps.datalist.model.DataListAction action : rowActions) {
+                Map<String, String> actionInfo = new HashMap<>();
+                actionInfo.put("id", action.getPropertyString("id"));
+                actionInfo.put("label", action.getPropertyString("label"));
+                rowActionsInfos.add(actionInfo);
+            }
+        }
+        dataModel.put("rowActions", rowActionsInfos);
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/KanbanUserView.ftl",
                 null);
@@ -129,7 +152,29 @@ public class KanbanPlugin extends UserviewMenu {
 
     protected String generateNonce(AppDefinition appDefinition, String jsonForm) {
         return SecurityUtil.generateNonce(
-                new String[]{"EmbedForm", appDefinition.getAppId(), appDefinition.getVersion().toString(), jsonForm},
+                new String[] { "EmbedForm", appDefinition.getAppId(), appDefinition.getVersion().toString(), jsonForm },
                 1);
+    }
+
+    protected DataList getDataList(String dataListId) {
+        ApplicationContext applicationContext = AppUtil.getApplicationContext();
+        DatalistDefinitionDao datalistDefinitionDao = (DatalistDefinitionDao) applicationContext
+                .getBean("datalistDefinitionDao");
+        DataListService dataListService = (DataListService) applicationContext.getBean("dataListService");
+        AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
+        DatalistDefinition datalistDefinition = datalistDefinitionDao.loadById(dataListId, appDefinition);
+        if (datalistDefinition == null) {
+            LogUtil.warn(getClassName(), "DataList Definition [" + dataListId + "] not found");
+            return null;
+        }
+
+        DataList dataList = dataListService.fromJson(datalistDefinition.getJson());
+        if (dataList == null) {
+            LogUtil.warn(getClassName(), "DataList [" + dataListId + "] not found");
+            return null;
+        }
+
+        dataList.setPageSize(DataList.MAXIMUM_PAGE_SIZE);
+        return dataList;
     }
 }
