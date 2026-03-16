@@ -179,7 +179,6 @@
               _jsonrow : JSON.stringify(data ? data : {}),
               _nonce : nonce
           };
-
           JPopup.show(frameId, formUrl, params, "", width, height);
       }
 
@@ -311,7 +310,21 @@
             footer: true
           },
           buttonClick: function(el, boardId) {
-            var existingForm = el.parentNode.querySelector('.itemform');
+
+            var data = {};
+            data[statusField] = boardId;
+
+            var height = "800";
+            var width = "900";
+            var args = {};
+            
+            var appId = "${appId!''}";
+            var formId = "${formId!''}";
+            
+            popupForm(formId, appId, appVersion, jsonForm, nonce, args, data, height, width);
+          },
+
+            <#--  var existingForm = el.parentNode.querySelector('.itemform');
             if (existingForm) {
               existingForm.querySelector("textarea").focus();
               return;
@@ -344,7 +357,7 @@
             formItem.querySelector(".btn-cancel").addEventListener("click", function() {
               formItem.parentNode.removeChild(formItem);
             });
-          },
+          -->
           dropEl: function(el, target, source, sibling) {
             var targetBoardId = target && target.parentElement
               ? target.parentElement.getAttribute("data-id")
