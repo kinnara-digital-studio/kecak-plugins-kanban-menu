@@ -162,13 +162,17 @@
           let formUrl = '${request.contextPath}/web/app/' + appId + '/' + appVersion + '/form/embed?_submitButtonLabel=Submit';
           let frameId = args.frameId = 'Frame_' + elementId;
 
-          if (data && data.id) {
-              if (formUrl.indexOf("?") != -1) {
-                  formUrl += "&";
-              } else {
-                  formUrl += "?";
+          if (data) {
+              for (var key in data) {
+                  if (data.hasOwnProperty(key) && data[key]) {
+                      if (formUrl.indexOf("?") !== -1) {
+                          formUrl += "&";
+                      } else {
+                          formUrl += "?";
+                      }
+                      formUrl += encodeURIComponent(key) + "=" + encodeURIComponent(data[key]);
+                  }
               }
-              formUrl += "id=" + data.id;
           }
           formUrl += UI.userviewThemeParams();
 
