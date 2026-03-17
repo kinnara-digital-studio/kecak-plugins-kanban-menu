@@ -25,7 +25,7 @@ import org.springframework.context.ApplicationContext;
 
 import java.util.*;
 
-public class KanbanPlugin extends UserviewMenu {
+public class KanbanUserViewMenu extends UserviewMenu {
 
     @Override
     public String getCategory() {
@@ -103,7 +103,7 @@ public class KanbanPlugin extends UserviewMenu {
             dataModel.put("editable", hasPermissionToEdit);
         }
 
-        return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/KanbanUserView.ftl",
+        return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/KanbanUserViewMenu.ftl",
                 null);
     }
 
@@ -147,7 +147,7 @@ public class KanbanPlugin extends UserviewMenu {
 
     @Override
     public String getPropertyOptions() {
-        return AppUtil.readPluginResource(getClassName(), "/properties/userview/JKanbanMenu.json");
+        return AppUtil.readPluginResource(getClassName(), "/properties/userview/KanbanUserViewMenu.json");
     }
 
     protected JSONObject getJsonForm(String formDefId, boolean readonly) {

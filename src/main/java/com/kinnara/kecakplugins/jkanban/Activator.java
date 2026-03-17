@@ -3,7 +3,7 @@ package com.kinnara.kecakplugins.jkanban;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import com.kinnara.kecakplugins.jkanban.kanban.KanbanPlugin;
+import com.kinnara.kecakplugins.jkanban.kanban.KanbanUserViewMenu;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -17,7 +17,7 @@ public class Activator implements BundleActivator {
 
         //Register plugin here
         //registrationList.add(context.registerService(MyPlugin.class.getName(), new MyPlugin(), null));
-        registrationList.add(context.registerService(KanbanPlugin.class.getName(), new KanbanPlugin(), null));
+        registrationList.add(context.registerService(KanbanUserViewMenu.class.getName(), new KanbanUserViewMenu(), null));
     }
 
     public void stop(BundleContext context) {
