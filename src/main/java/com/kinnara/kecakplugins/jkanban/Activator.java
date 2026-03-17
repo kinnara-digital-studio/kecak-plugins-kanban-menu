@@ -3,7 +3,7 @@ package com.kinnara.kecakplugins.jkanban;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import com.kinnara.kecakplugins.jkanban.kanban.KanbanUserViewMenu;
+import com.kinnara.kecakplugins.jkanban.userview.KanbanUserViewMenu;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;

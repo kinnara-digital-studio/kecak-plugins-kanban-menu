@@ -1,4 +1,4 @@
-package com.kinnara.kecakplugins.jkanban.kanban;
+package com.kinnara.kecakplugins.jkanban.userview;
 
 import com.kinnarastudio.commons.Try;
 import org.apache.commons.lang3.StringEscapeUtils;
