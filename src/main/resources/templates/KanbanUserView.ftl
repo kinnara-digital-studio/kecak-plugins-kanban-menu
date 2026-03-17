@@ -251,33 +251,33 @@
 
       function triggerAction(event, actionId, btn) {
           event.stopPropagation();
-
           var menu = btn.closest('.dropdown-menu');
           if (menu) menu.classList.remove('show');
           
-          // Ambil ID item dari elemen HTML (sama seperti showEditForm)
           var kanbanItem = btn.closest('.kanban-item');
           var itemId = kanbanItem.getAttribute("data-eid");
-
           var actionUrl = "${request.contextPath}/web/json/data/app/${appId}/" + appVersion + "/datalist/${dataListId!''}/action/" + actionId + "?id=" + itemId;
-
           if (actionId === 'edit') {
              showEditForm(event, btn);
              return;
           }
-
           if (confirm("Are you sure you want to execute this action?")) {
               jQuery.ajax({
                   url: actionUrl,
                   method: "POST",
                   contentType: "application/json",
-                  success: function(resp) {
-                      console.log("Action Triggered", resp);
-                      alert("Action executed successfully.");
+                  dataType: "json",
+                  success: function(resp, status, xhr) {
+                    console.log("[triggerAction] Action success response:", resp);
+                    if (resp.url === "REFERER"){
+                      window.location.href = document.referrer ;
+                    } else {
+                      window.location.href = resp.url;
+                    }
                   },
                   error: function(xhr) {
-                      console.error("Failed to execute action", xhr);
-                      alert("Failed to execute action.");
+                    console.error("[triggerAction] Failed to execute action", xhr);
+                    alert("Failed to execute action.");
                   }
               });
           }

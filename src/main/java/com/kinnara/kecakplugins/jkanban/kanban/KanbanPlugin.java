@@ -74,7 +74,7 @@ public class KanbanPlugin extends UserviewMenu {
         final DataListAction[] rowActions = dataList.getRowActions();
 
         for (int i = 0; i < rowActions.length; i++) {
-            LogUtil.info(getClassName(), rowActions[i].getPropertyString("id"));
+            LogUtil.info(getClassName(), rowActions[i].getPropertyString("hrefParams"));
         }
 
         if (rowActions != null) {
@@ -82,6 +82,8 @@ public class KanbanPlugin extends UserviewMenu {
                 Map<String, String> actionInfo = new HashMap<>();
                 actionInfo.put("id", action.getPropertyString("id"));
                 actionInfo.put("label", action.getPropertyString("label"));
+                actionInfo.put("href", action.getHref());
+                actionInfo.put("hrefParams", action.getPropertyString("hrefParams"));
                 rowActionsInfos.add(actionInfo);
             }
         }
