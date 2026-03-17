@@ -14,9 +14,12 @@ import org.joget.apps.datalist.service.DataListService;
 import org.joget.apps.form.service.FormService;
 import org.joget.apps.form.service.FormUtil;
 import org.joget.apps.userview.model.UserviewMenu;
+import org.joget.apps.userview.model.UserviewPermission;
 import org.joget.commons.util.LogUtil;
 import org.joget.commons.util.SecurityUtil;
+import org.joget.directory.model.User;
 import org.joget.plugin.base.PluginManager;
+import org.joget.workflow.model.service.WorkflowUserManager;
 import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 
@@ -58,25 +61,15 @@ public class KanbanPlugin extends UserviewMenu {
         dataModel.put("appId", appDefinition.getAppId());
         dataModel.put("appVersion", appDefinition.getVersion());
 
-        final JSONObject jsonForm = getJsonForm(formId, false);
-        dataModel.put("jsonForm", StringEscapeUtils.escapeHtml4(jsonForm.toString()));
-
-        final String nonce = generateNonce(appDefinition, jsonForm.toString());
-        dataModel.put("nonce", nonce);
-
         String elementUniqueKey = FormUtil.getUniqueKey();
         dataModel.put("elementUniqueKey", elementUniqueKey);
 
         List<Map<String, String>> rowActionsInfos = new ArrayList<>();
-
         final DataList dataList = getDataList(dataListId);
-
         final DataListAction[] rowActions = dataList.getRowActions();
-
         for (int i = 0; i < rowActions.length; i++) {
             LogUtil.info(getClassName(), rowActions[i].getPropertyString("hrefParams"));
         }
-
         if (rowActions != null) {
             for (org.joget.apps.datalist.model.DataListAction action : rowActions) {
                 Map<String, String> actionInfo = new HashMap<>();
@@ -88,6 +81,27 @@ public class KanbanPlugin extends UserviewMenu {
             }
         }
         dataModel.put("rowActions", rowActionsInfos);
+
+
+        WorkflowUserManager workflowUserManager = (WorkflowUserManager) applicationContext.getBean("workflowUserManager");
+        final User currentUser = workflowUserManager.getCurrentUser();
+
+        final boolean hasPermissionToEdit = optPermission().map(permission -> {
+            permission.setCurrentUser(currentUser);
+            return permission.isAuthorize();
+        }).orElse(false);
+
+        if (formId.isEmpty()){
+            dataModel.put("editable", false);
+        }else {
+            final JSONObject jsonForm = getJsonForm(formId, !hasPermissionToEdit);
+            dataModel.put("jsonForm", StringEscapeUtils.escapeHtml4(jsonForm.toString()));
+
+            final String nonce = generateNonce(appDefinition, jsonForm.toString());
+            dataModel.put("nonce", nonce);
+
+            dataModel.put("editable", hasPermissionToEdit);
+        }
 
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/KanbanUserView.ftl",
                 null);
@@ -178,5 +192,14 @@ public class KanbanPlugin extends UserviewMenu {
 
         dataList.setPageSize(DataList.MAXIMUM_PAGE_SIZE);
         return dataList;
+    }
+
+    protected Optional<UserviewPermission> optPermission() {
+        final ApplicationContext applicationContext = AppUtil.getApplicationContext();
+        final PluginManager pluginManager = (PluginManager) applicationContext.getBean("pluginManager");
+        return Optional.of("permission")
+                .map(this::getProperty)
+                .map(o -> (Map<String, Object>) o)
+                .map(pluginManager::getPlugin);
     }
 }
