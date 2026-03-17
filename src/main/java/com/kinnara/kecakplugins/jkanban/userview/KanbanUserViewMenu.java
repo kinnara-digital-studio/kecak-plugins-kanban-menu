@@ -119,7 +119,7 @@ public class KanbanUserViewMenu extends UserviewMenu {
 
     @Override
     public String getName() {
-        return "JKanban";
+        return "Kanban";
     }
 
     @Override
@@ -137,7 +137,7 @@ public class KanbanUserViewMenu extends UserviewMenu {
 
     @Override
     public String getLabel() {
-        return "JKanban";
+        return "Kanban";
     }
 
     @Override
