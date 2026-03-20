@@ -47,10 +47,12 @@ public class KanbanUserViewMenu extends UserviewMenu {
 
         String label = getPropertyString("labelField");
         String status = getPropertyString("statusField");
+        String canMove = getPropertyString("canMoveField");
         Map<String, String>[] boards = getPropertyGrid("options");
         dataModel.put("label", label);
         dataModel.put("status", status);
         dataModel.put("boards", boards);
+        dataModel.put("canMove", canMove);
 
         final String dataListId = getPropertyString("dataListId");
         final String formId = getPropertyString("formId");
@@ -82,8 +84,8 @@ public class KanbanUserViewMenu extends UserviewMenu {
         }
         dataModel.put("rowActions", rowActionsInfos);
 
-
-        WorkflowUserManager workflowUserManager = (WorkflowUserManager) applicationContext.getBean("workflowUserManager");
+        WorkflowUserManager workflowUserManager = (WorkflowUserManager) applicationContext
+                .getBean("workflowUserManager");
         final User currentUser = workflowUserManager.getCurrentUser();
 
         final boolean hasPermissionToEdit = optPermission().map(permission -> {
@@ -91,9 +93,9 @@ public class KanbanUserViewMenu extends UserviewMenu {
             return permission.isAuthorize();
         }).orElse(false);
 
-        if (formId.isEmpty()){
+        if (formId.isEmpty()) {
             dataModel.put("editable", false);
-        }else {
+        } else {
             final JSONObject jsonForm = getJsonForm(formId, !hasPermissionToEdit);
             dataModel.put("jsonForm", StringEscapeUtils.escapeHtml4(jsonForm.toString()));
 

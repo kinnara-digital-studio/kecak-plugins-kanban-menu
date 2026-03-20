@@ -140,8 +140,10 @@
     <script>
       var labelField  = "${label!''}";
       var statusField = "${status!''}";
+      var canMoveField = "${canMove!''}";
       var apiUrl = "${request.contextPath}/web/json/data/app/${appId}/datalist/${dataListId}";
       var hasPermissionToEdit = ${editable?c};
+      var canMoveMap = {}; // { itemId: true/false } — diisi saat buildKanban
 
       var boardsConfig = [
         <#if boards?? && boards?has_content>
@@ -199,6 +201,9 @@
                 var updatedLabel = result[labelField] || "(no label)";
                 var updatedStatus = result[statusField] || "";
 
+                var rawCanMove = result[canMoveField];
+                canMoveMap[updatedId] = (rawCanMove === "false" || rawCanMove === false) ? false : true;
+
                 var itemData = {
                     id: updatedId,
                     title: createItemHtml(updatedLabel)
@@ -207,6 +212,20 @@
                 kanbanBoard.removeElement(updatedId);
                 if (updatedStatus) {
                     kanbanBoard.addElement(updatedStatus, itemData);
+
+                    setTimeout(function() {
+                      var el = document.querySelector('.kanban-item[data-eid="' + updatedId + '"]');
+                      if (el) {
+                        var canMove = canMoveMap[updatedId];
+                        if (canMove === false) { 
+                          el.style.cursor = 'default'; 
+                          el.title = 'Item cannot be moved';
+                        } else {
+                          el.style.cursor = 'grab';
+                          el.removeAttribute('title');
+                        }
+                      }
+                    }, 0);
                 }
           }
       }
@@ -327,6 +346,13 @@
       }
 
       function buildKanban(items) {
+        canMoveMap = {};
+        items.forEach(function(record) {
+          var id = String(record["id"] || record["_id"] || record["$value"] || "");
+          if (!id) return;
+          var rawCanMove = record[canMoveField];
+          canMoveMap[id] = (rawCanMove === "false" || rawCanMove === false) ? false : true;
+        });
 
         var boards = boardsConfig.map(function(boardCfg) {
           var boardItems = [];
@@ -387,12 +413,36 @@
               ? source.parentElement.getAttribute("data-id")
               : null;
 
-            if (!targetBoardId || !sourceBoardId) return;
+            if (targetBoardId === null || sourceBoardId === null) return;
             if (targetBoardId === sourceBoardId) return;
 
-            updateItemStatus(el, targetBoardId, sourceBoardId);
+            var itemId = el.getAttribute("data-eid");
+
+            if (canMoveMap[itemId] === false) {
+              console.log("[canMove REVERT] Item", itemId, "tidak boleh dipindah, dikembalikan ke", sourceBoardId);
+              var itemData = {
+                id: el.getAttribute("data-eid"),
+                title: el.innerHTML
+              };
+              kanbanBoard.removeElement(itemData.id);
+              kanbanBoard.addElement(sourceBoardId, itemData);
+              return;
+            }
+
+            var cleanTargetId = (targetBoardId === "null") ? "" : targetBoardId;
+            var cleanSourceId = (sourceBoardId === "null") ? "" : sourceBoardId;
+
+            updateItemStatus(el, cleanTargetId, cleanSourceId);
           },
           boards: boards
+        });
+
+        document.querySelectorAll('.kanban-item').forEach(function(el) {
+          var id = el.getAttribute('data-eid');
+          if (canMoveMap[id] === false) {
+            el.style.cursor = 'default';
+            el.title = 'Item ini tidak dapat dipindah';
+          }
         });
 
         boardsConfig.forEach(function(b) {
@@ -412,7 +462,10 @@
       function updateItemStatus(el, targetBoardId, sourceBoardId) {
         var itemId = el.getAttribute("data-eid");
 
-        var targetBoard = boardsConfig.find(function(b) { return b.id === targetBoardId; });
+        var targetBoard = boardsConfig.find(function(b) { 
+            var bId = (b.id === null) ? "" : b.id;
+            return bId === targetBoardId; 
+        });
         var targetBoardTitle = targetBoard ? targetBoard.title : targetBoardId;
 
         console.log("Status changed", { id: itemId, from: sourceBoardId, to: targetBoardId, boardTitle: targetBoardTitle });
@@ -440,7 +493,13 @@
             };
 
             kanbanBoard.removeElement(itemData.id);
-            kanbanBoard.addElement(sourceBoardId, itemData);
+            var sourceBoardConfig = boardsConfig.find(function(b) { 
+                var bId = (b.id === null || b.id === "null") ? "" : b.id;
+                return bId === sourceBoardId; 
+            });
+            var revertBoardId = sourceBoardConfig ? sourceBoardConfig.id : (sourceBoardId === "" ? "null" : sourceBoardId);
+            
+            kanbanBoard.addElement(revertBoardId, itemData);
           }
         });
       }

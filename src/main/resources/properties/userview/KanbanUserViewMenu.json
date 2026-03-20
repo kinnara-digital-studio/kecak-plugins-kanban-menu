@@ -1,8 +1,7 @@
 [
   {
     "title": "JKanban",
-    "properties":
-    [
+    "properties": [
       {
         "name": "id",
         "label": "Id",
@@ -42,17 +41,17 @@
         ]
       },
       {
-        "name" : "dataListId",
+        "name": "dataListId",
         "label": "DataList",
-        "type" : "selectbox",
-        "required" : "true",
-        "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/datalist/options"
+        "type": "selectbox",
+        "required": "true",
+        "options_ajax": "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/datalist/options"
       },
       {
-        "name" : "formId",
+        "name": "formId",
         "label": "Form",
-        "type" : "selectbox",
-        "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/forms/options"
+        "type": "selectbox",
+        "options_ajax": "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/forms/options"
       },
       {
         "name": "labelField",
@@ -60,6 +59,13 @@
         "type": "textfield",
         "required": "true",
         "value": "label"
+      },
+      {
+        "name": "canMoveField",
+        "label": "Can Move Field",
+        "type": "textfield",
+        "required": "true",
+        "value": "canMove"
       },
       {
         "name": "statusField",
@@ -75,9 +81,9 @@
       {
         "name": "permission",
         "label": "Permission to edit",
-        "type" : "elementselect",
-        "options_ajax" : "[CONTEXT_PATH]/web/property/json/getElements?classname=org.joget.apps.userview.model.UserviewAccessPermission",
-        "url" : "[CONTEXT_PATH]/web/property/json[APP_PATH]/getPropertyOptions"
+        "type": "elementselect",
+        "options_ajax": "[CONTEXT_PATH]/web/property/json/getElements?classname=org.joget.apps.userview.model.UserviewAccessPermission",
+        "url": "[CONTEXT_PATH]/web/property/json[APP_PATH]/getPropertyOptions"
       }
     ]
   }
