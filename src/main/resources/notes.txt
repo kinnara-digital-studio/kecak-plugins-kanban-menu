@@ -1,2 +1,0 @@
-${request.contextPath}/plugin/${className}/node_modules/jkanban/jkanban.min.css
-${request.contextPath}/plugin/${className}/node_modules/jkanban/jkanban.min.js

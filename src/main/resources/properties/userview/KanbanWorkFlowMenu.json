@@ -1,0 +1,75 @@
+[
+  {
+    "title": "Kanban WorkFlow Menu Properties",
+    "properties": [
+      {
+        "name": "id",
+        "label": "Id",
+        "type": "hidden"
+      },
+      {
+        "name": "customId",
+        "label": "Custom ID",
+        "type": "textfield",
+        "regex_validation": "^[a-zA-Z0-9_]+$",
+        "validation_message": "Invalid"
+      },
+      {
+        "name": "label",
+        "label": "Label",
+        "type": "textfield",
+        "required": "true",
+        "value": "My Menu"
+      },
+      {
+        "name": "processDefId",
+        "label": "Process Definition ID",
+        "type": "textfield",
+        "required": "true"
+      },
+      {
+        "name": "dataListId",
+        "label": "DataList",
+        "type": "selectbox",
+        "required": "true",
+        "options_ajax": "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/datalist/options"
+      },
+      {
+        "name": "statusField",
+        "label": "Status Field",
+        "type": "textfield",
+        "required": "true"
+      },
+      {
+        "name": "titleField",
+        "label": "Title Field",
+        "type": "textfield",
+        "required": "true"
+      },
+      {
+        "name": "options",
+        "label": "Options",
+        "type": "grid",
+        "required": "true",
+        "columns": [
+          {
+            "key": "value",
+            "label": "Value"
+          },
+          {
+            "key": "label",
+            "label": "Label"
+          },
+          {
+            "key": "canEdit",
+            "label": "Requester Can Edit"
+          },
+          {
+            "key": "colour",
+            "label": "Colour"
+          }
+        ]
+      }
+    ]
+  }
+]

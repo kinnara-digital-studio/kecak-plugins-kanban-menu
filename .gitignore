@@ -3,7 +3,6 @@ node_modules/
 package-lock.json
 .idea/
 .settings/
-notes.txt
 Akmal Notes/KanbanUserView_README.md
 KanbanUserView.updated.ftl
 Akmal Notes/KANBAN_DATA_FLOW.md
