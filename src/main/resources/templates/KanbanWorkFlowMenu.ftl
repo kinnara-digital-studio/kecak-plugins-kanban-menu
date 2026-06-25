@@ -79,10 +79,6 @@
 
       // Initialize Function
       function initKanban(boardsData) {
-          cardFormMap = {};
-
-          var boardsConfig = boardsData.map(function(board) {
-              var items = board.cards.map(function(card, index) {
                   var cardId = card.id;
 
                   if (card.form && card.form !== "") {
@@ -92,16 +88,21 @@
                           var decoded = textarea.value;
                           cardFormMap[cardId] = {
                               form: JSON.parse(decoded),
+                              formRaw: decoded,
+          cardFormMap = {};
+
+          var boardsConfig = boardsData.map(function(board) {
+              var items = board.cards.map(function(card, index) {
                               nonce: card.nonce || "",
                               activityId: card.activityId || "",
                               canDrag: card.canDrag || false
                           };
                       } catch(e) {
                           console.warn("Failed to parse form for card " + cardId, e);
-                          cardFormMap[cardId] = { form: {}, nonce: "", activityId: "", canDrag: false };
+                          cardFormMap[cardId] = { form: {}, formRaw: "{}", nonce: "", activityId: "", canDrag: false };
                       }
                   } else {
-                      cardFormMap[cardId] = { form: {}, nonce: "", activityId: "", canDrag: false };
+                      cardFormMap[cardId] = { form: {}, formRaw: "{}", nonce: "", activityId: "", canDrag: false };
                   }
 
                   var iconHtml = card.isEditable 
@@ -206,7 +207,7 @@
           });
       }
 
-      function popupForm(elementId, appId, appVersion, jsonForm, nonce, args, data, height, width) {
+      function popupForm(elementId, appId, appVersion, formRaw, nonce, args, data, height, width) {
           var isEditable = ${editable?c};
           var label = isEditable ? 'Submit' : 'Close';
           var formUrl = '${request.contextPath}/web/app/' + appId + '/' + appVersion + '/form/embed?_submitButtonLabel=' + label;
@@ -227,7 +228,7 @@
           formUrl += UI.userviewThemeParams();
 
           var params = {
-              _json : JSON.stringify(jsonForm ? jsonForm : {}),
+              _json : formRaw,
               _callback : 'onSubmitted',
               _setting : JSON.stringify(args ? args : {}).replace(/"/g, "'"),
               _jsonrow : JSON.stringify(data ? data : {}),
@@ -243,10 +244,10 @@
 
       function openCardForm(cardId) {
           var entry = cardFormMap[cardId] || {};
-          var jsonForm = entry.form || {};
+          var formRaw = entry.formRaw || "{}";
           var nonce = entry.nonce || "";
 
-          if (!jsonForm || Object.keys(jsonForm).length === 0) {
+          if (!formRaw || formRaw === "{}" || formRaw === "") {
               alert("There is No Activity or Form In This Card");
               return;
           }
@@ -258,7 +259,7 @@
           var width = "900";
           var args = {};
 
-          popupForm(cardId, appId, appVersion, jsonForm, nonce, args, data, height, width);
+          popupForm(cardId, appId, appVersion, formRaw, nonce, args, data, height, width);
       }
 
       function moveCard(cardId, targetBoardId, sourceBoardId, el) {

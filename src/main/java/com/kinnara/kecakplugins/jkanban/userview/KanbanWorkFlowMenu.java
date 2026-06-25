@@ -197,6 +197,8 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
             }
         }
 
+        LogUtil.info(getClassName(), "formDefId: " + formDefId);
+
         boolean canEdit = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
 
         if (formDefId.isEmpty()) {
