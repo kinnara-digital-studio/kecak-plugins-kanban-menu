@@ -47,8 +47,16 @@
         "required": "true"
       },
       {
+        "name": "formDefId",
+        "label": "Form",
+        "type" : "selectbox",
+        "required" : "true",
+        "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/forms/options",
+        "description": "Form for View if Process Complete"
+      },
+      {
         "name": "options",
-        "label": "Options",
+        "label": "Board Options",
         "type": "grid",
         "required": "true",
         "columns": [
@@ -59,10 +67,6 @@
           {
             "key": "label",
             "label": "Label"
-          },
-          {
-            "key": "canEdit",
-            "label": "Requester Can Edit"
           },
           {
             "key": "colour",

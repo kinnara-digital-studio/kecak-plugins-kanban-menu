@@ -197,14 +197,15 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
             }
         }
 
-        boolean isCurrentAssignee = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
-        boolean isDraftRequester  = isRequesterCanEdit(status)
-                && Objects.equals(requesterName, currentUser.getUsername());
-        boolean canEdit = isCurrentAssignee || isDraftRequester;
+        boolean canEdit = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
+
+        if (formDefId.isEmpty()) {
+            formDefId = getPropertyString("formDefId");
+        }
 
         JSONObject form = new JSONObject();
         String nonce = "";
-        if (!formDefId.isEmpty()) {
+        if (formDefId != null && !formDefId.isEmpty()) {
             form  = getJsonForm(formDefId, !canEdit);
             nonce = generateNonce(appDefinition, form.toString());
         }

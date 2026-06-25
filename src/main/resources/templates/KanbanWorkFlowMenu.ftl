@@ -38,6 +38,21 @@
         margin-bottom: 8px;
         color: #333;
         font-size: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .card-title-text {
+        word-break: break-word;
+      }
+
+      .card-icon {
+        color: #888;
+        font-size: 12px;
+        margin-top: 2px;
+        flex-shrink: 0;
       }
 
       .card-details {
@@ -51,103 +66,146 @@
     </style>
   </head>
   <body>
+    <script type="application/json" id="kanbanRawData">${boards! '[]'}</script>
     <div id="myKanban"></div>
 
     <script src="${request.contextPath}/plugin/${className}/node_modules/jkanban/dist/jkanban.js"></script>
     <script>
-      var boardsRawData = ${boards! '[]'};
       var cardFormMap = {};
+      var kanbanBoard = null;
 
-      console.log("jKanban raw data:", boardsRawData);
+      var initialRawData = JSON.parse(document.getElementById('kanbanRawData').textContent || '[]');
+      initKanban(initialRawData);
 
-      var boardsConfig = boardsRawData.map(function(board) {
-          var items = board.cards.map(function(card, index) {
-              var cardId = card.id;
+      // Initialize Function
+      function initKanban(boardsData) {
+          cardFormMap = {};
 
-              if (card.form && card.form !== "") {
-                  try {
-                      var textarea = document.createElement('textarea');
-                      textarea.innerHTML = card.form;
-                      var decoded = textarea.value;
-                      cardFormMap[cardId] = {
-                          form: JSON.parse(decoded),
-                          nonce: card.nonce || "",
-                          activityId: card.activityId || "",
-                          canDrag: card.canDrag || false
-                      };
-                  } catch(e) {
-                      console.warn("Failed to parse form for card " + cardId, e);
-                      cardFormMap[cardId] = { form: {}, nonce: "", activityId: "" };
+          var boardsConfig = boardsData.map(function(board) {
+              var items = board.cards.map(function(card, index) {
+                  var cardId = card.id;
+
+                  if (card.form && card.form !== "") {
+                      try {
+                          var textarea = document.createElement('textarea');
+                          textarea.innerHTML = card.form;
+                          var decoded = textarea.value;
+                          cardFormMap[cardId] = {
+                              form: JSON.parse(decoded),
+                              nonce: card.nonce || "",
+                              activityId: card.activityId || "",
+                              canDrag: card.canDrag || false
+                          };
+                      } catch(e) {
+                          console.warn("Failed to parse form for card " + cardId, e);
+                          cardFormMap[cardId] = { form: {}, nonce: "", activityId: "", canDrag: false };
+                      }
+                  } else {
+                      cardFormMap[cardId] = { form: {}, nonce: "", activityId: "", canDrag: false };
                   }
-              } else {
-                  cardFormMap[cardId] = { form: {}, nonce: "", activityId: "" };
-              }
 
-              var iconHtml = card.isEditable 
-                    ? "<i class='fas fa-pencil-alt' style='float:right; color:#888; font-size:12px; margin-top:2px;' title='Edit'></i>" 
-                    : "<i class='fas fa-eye' style='float:right; color:#888; font-size:12px; margin-top:2px;' title='View'></i>";
+                  var iconHtml = card.isEditable 
+                        ? "<i class='fas fa-pencil-alt card-icon' title='Edit'></i>" 
+                        : "<i class='fas fa-eye card-icon' title='View'></i>";
 
-              var html = "";
-              html += "<div class='card-title'>" + (card.title || '') + iconHtml + "</div>";
-              html += "<div class='card-details'>";
-              html += "<p><b>Activity:</b> " + (card.activityName || '') + "</p>";
-              html += "<p><b>Requester:</b> " + (card.requesterName || '') + "</p>";
-              html += "<p><b>Assignee:</b> " + (card.currentAssigneeName || '') + "</p>";
-              html += "</div>";
+                  var html = "";
+                  html += "<div class='card-title'>";
+                  html += "  <span class='card-title-text'>" + (card.title || '') + "</span>" + iconHtml;
+                  html += "</div>";
+                  html += "<div class='card-details'>";
+                  html += "<p><b>Activity:</b> " + (card.activityName || '') + "</p>";
+                  html += "<p><b>Requester:</b> " + (card.requesterName || '') + "</p>";
+                  html += "<p><b>Assignee:</b> " + (card.currentAssigneeName || '') + "</p>";
+                  html += "</div>";
+
+                  return {
+                      id: cardId,
+                      title: html
+                  };
+              });
 
               return {
-                  id: cardId,
-                  title: html
+                  id: board.value,
+                  title: board.label,
+                  colour: board.colour,
+                  item: items
               };
           });
 
-          return {
-              id: board.value,
-              title: board.label,
-              colour: board.colour,
-              item: items
-          };
-      });
+          document.getElementById("myKanban").innerHTML = "";
 
-      var kanbanBoard = new jKanban({
-          element: "#myKanban",
-          gutter: "10px",
-          widthBoard: "300px",
-          dragBoards: false,
-          dragItems: true,
-          click: function(el) {
-              var cardId = el.getAttribute("data-eid");
-              openCardForm(cardId)
-          },
-          dropEl: function(el, target, source, sibling) {
-              var cardId = el.getAttribute("data-eid");
-              var entry = cardFormMap[cardId] || {};
+          kanbanBoard = new jKanban({
+              element: "#myKanban",
+              gutter: "10px",
+              widthBoard: "300px",
+              dragBoards: false,
+              dragItems: true,
+              click: function(el) {
+                  var cardId = el.getAttribute("data-eid");
+                  openCardForm(cardId);
+              },
+              dropEl: function(el, target, source, sibling) {
+                  var cardId = el.getAttribute("data-eid");
+                  var entry = cardFormMap[cardId] || {};
 
-              if (!entry.canDrag) {
-                  revertCard(cardId, el, source.parentElement.getAttribute("data-id"));
-                  return;
+                  if (!entry.canDrag) {
+                      revertCard(cardId, el, source.parentElement.getAttribute("data-id"));
+                      return;
+                  }
+
+                  var targetBoardId = target.parentElement.getAttribute("data-id");
+                  var sourceBoardId = source.parentElement.getAttribute("data-id");
+                  if (targetBoardId === sourceBoardId) return;
+
+                  moveCard(cardId, targetBoardId, sourceBoardId, el);
+              },
+              boards: boardsConfig
+          });
+
+          boardsConfig.forEach(function(board) {
+              if (board.colour) {
+                  var boardContainer = document.querySelector('.kanban-board[data-id="' + board.id + '"]');
+                  var header = boardContainer ? boardContainer.querySelector('.kanban-board-header') : null;
+
+                  if (boardContainer) {
+                      boardContainer.style.borderRadius = "10px";
+                      var fadedColor = board.colour;
+                      if (fadedColor.length === 7 && fadedColor.startsWith("#")) {
+                          fadedColor = fadedColor + "33"; // 20% opacity
+                      }
+                      boardContainer.style.backgroundColor = fadedColor;
+                  }
+
+                  if (header) {
+                      header.style.backgroundColor = board.colour;
+                      header.style.borderRadius = "10px 10px 0 0";
+                      header.style.color = "#ffffff";
+                  }
               }
-
-              var targetBoardId = target.parentElement.getAttribute("data-id");
-              var sourceBoardId = source.parentElement.getAttribute("data-id");
-              if (targetBoardId === sourceBoardId) return;
-
-              moveCard(cardId, targetBoardId, sourceBoardId, el);
-          },
-          boards: boardsConfig
-      });
-
-      // Apply background colors to board headers
-      boardsConfig.forEach(function(board) {
-          if (board.colour) {
-              var header = document.querySelector('.kanban-board[data-id="' + board.id + '"] .kanban-board-header');
-              if (header) {
-                  header.style.backgroundColor = board.colour;
-              }
-          }
-      });
+          });
+      }
 
       // Helper Function
+      function refreshKanbanBoard() {
+          jQuery.ajax({
+              url: window.location.href,
+              method: "GET",
+              success: function(html) {
+                  var parser = new DOMParser();
+                  var doc = parser.parseFromString(html, "text/html");
+                  var rawDataStr = doc.getElementById('kanbanRawData').textContent;
+                  if (rawDataStr) {
+                      var newData = JSON.parse(rawDataStr);
+                      initKanban(newData);
+                      console.log("Kanban board dynamically refreshed!");
+                  }
+              },
+              error: function() {
+                  console.error("Error Refresh Kanban Item Data");
+              }
+          });
+      }
+
       function popupForm(elementId, appId, appVersion, jsonForm, nonce, args, data, height, width) {
           var isEditable = ${editable?c};
           var label = isEditable ? 'Submit' : 'Close';
@@ -215,6 +273,8 @@
 
           var submitUrl = "${request.contextPath}/web/json/data/assignment/" + activityId;
 
+          el.style.opacity = '0.5';
+
           jQuery.ajax({
               url: submitUrl,
               method: "POST",
@@ -227,13 +287,16 @@
                   if (resp.validation_error) {
                       var errors = Object.values(resp.validation_error).join("\n");
                       revertCard(cardId, el, sourceBoardId);
+                      el.style.opacity = '1';
                       return;
                   }
                   console.log("Card moved successfully", resp);
+                  setTimeout(refreshKanbanBoard, 1000);
               },
               error: function(xhr) {
                   console.error("Failed to move card", xhr);
                   revertCard(cardId, el, sourceBoardId);
+                  el.style.opacity = '1';
               }
           });
       }
