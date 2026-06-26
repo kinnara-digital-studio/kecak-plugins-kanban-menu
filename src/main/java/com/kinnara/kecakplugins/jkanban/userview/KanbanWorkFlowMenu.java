@@ -177,21 +177,22 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
         String activityId = "";
         String activityName = ResourceBundleUtil.getMessage("jkanban.noActivityYet");
         String currentAssigneeUserName = "";
-        String displayAssigneeName = "No Assignee Yet";
+        //String displayAssigneeName = "No Assignee";
+        String displayAssigneeName = ResourceBundleUtil.getMessage("jkanban.noAssigneeYet");
         String formDefId = "";
 
         if (assignment != null) {
-            String activityDefId = assignment.getActivityDefId();
+//            String activityDefId = assignment.getActivityDefId();
             activityId = assignment.getActivityId();
             activityName = assignment.getActivityName();
             currentAssigneeUserName = assignment.getAssigneeName();
 
-            LogUtil.info(getClassName(), "activityId: " + activityId);
+            //LogUtil.info(getClassName(), "activityId: " + activityId);
 
-            PackageActivityForm packageActivityForm = appService.retrieveMappedForm(appId, appVersion, getProcessDefId(), activityDefId);
-            if (packageActivityForm != null) {
-                formDefId = packageActivityForm.getFormId();
-            }
+//            PackageActivityForm packageActivityForm = appService.retrieveMappedForm(appId, appVersion, getProcessDefId(), activityDefId);
+//            if (packageActivityForm != null) {
+//                formDefId = packageActivityForm.getFormId();
+//            }
 
             User assigneeUser = directoryManager.getUserByUsername(currentAssigneeUserName);
             if (assigneeUser != null) {
@@ -199,7 +200,7 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
             }
         }
 
-        LogUtil.info(getClassName(), "formDefId: " + formDefId);
+        //LogUtil.info(getClassName(), "formDefId: " + formDefId);
 
         boolean canEdit = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
 

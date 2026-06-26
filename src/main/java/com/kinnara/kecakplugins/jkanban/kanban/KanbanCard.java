@@ -17,7 +17,8 @@ public class KanbanCard {
     public KanbanCard(String recordId, String title, String status, String requesterName,
                       String currentAssigneeName, String activityId,
                       String activityName,
-                      String form, String nonce, boolean canDrag, boolean isEditable
+                      String form,
+                      String nonce, boolean canDrag, boolean isEditable
     ) {
         this.recordId = recordId;
         this.title = title;
