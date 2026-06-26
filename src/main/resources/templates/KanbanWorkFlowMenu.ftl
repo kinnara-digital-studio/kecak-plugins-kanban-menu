@@ -59,9 +59,17 @@
         font-size: 12px;
         color: #666;
       }
-      
       .card-details p {
-        margin: 4px 0;
+          margin: 4px 0;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+      }
+      .card-details i {
+          width: 14px;
+          text-align: center;
+          color: #aaa;
+          flex-shrink: 0;
       }
     </style>
   </head>
@@ -79,6 +87,10 @@
 
       // Initialize Function
       function initKanban(boardsData) {
+          cardFormMap = {};
+
+          var boardsConfig = boardsData.map(function(board) {
+              var items = board.cards.map(function(card, index) {
                   var cardId = card.id;
 
                   if (card.form && card.form !== "") {
@@ -89,10 +101,6 @@
                           cardFormMap[cardId] = {
                               form: JSON.parse(decoded),
                               formRaw: decoded,
-          cardFormMap = {};
-
-          var boardsConfig = boardsData.map(function(board) {
-              var items = board.cards.map(function(card, index) {
                               nonce: card.nonce || "",
                               activityId: card.activityId || "",
                               canDrag: card.canDrag || false
@@ -114,9 +122,9 @@
                   html += "  <span class='card-title-text'>" + (card.title || '') + "</span>" + iconHtml;
                   html += "</div>";
                   html += "<div class='card-details'>";
-                  html += "<p><b>Activity:</b> " + (card.activityName || '') + "</p>";
-                  html += "<p><b>Requester:</b> " + (card.requesterName || '') + "</p>";
-                  html += "<p><b>Assignee:</b> " + (card.currentAssigneeName || '') + "</p>";
+                  html += "<p><i class='fas fa-user-circle'></i> " + (card.requesterName || '') + "</p>";
+                  html += "<p><i class='fas fa-file-alt'></i> " + (card.activityName || '') + "</p>";
+                  html += "<p><i class='fas fa-inbox'></i> " + (card.currentAssigneeName || '') + "</p>";
                   html += "</div>";
 
                   return {
