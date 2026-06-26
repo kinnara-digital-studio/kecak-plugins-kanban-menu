@@ -81,6 +81,7 @@
     <script>
       var cardFormMap = {};
       var kanbanBoard = null;
+      var boardFormMap = {};
 
       var initialRawData = JSON.parse(document.getElementById('kanbanRawData').textContent || '[]');
       initKanban(initialRawData);
@@ -88,30 +89,43 @@
       // Initialize Function
       function initKanban(boardsData) {
           cardFormMap = {};
+          boardFormMap = {};
+
+          var parseForm = function(rawString) {
+              if (!rawString || rawString === "") return { formRaw: "{}"};
+              try {
+                  var textarea = document.createElement('textarea');
+                  textarea.innerHTML = rawString;
+                  var decoded = textarea.value;
+                  return { formRaw: decoded};
+              } catch(e) {
+                  console.warn("Failed to parse form", e);
+                  return { formRaw: "{}"};
+              }
+          };
 
           var boardsConfig = boardsData.map(function(board) {
+              var boardId = board.value;
+              boardFormMap[boardId] = {
+                  editable: {
+                      formRaw: parseForm(board.formEditable).formRaw,
+                      nonce: board.nonceEditable || ""
+                  },
+                  readOnly: {
+                      formRaw: parseForm(board.formReadOnly).formRaw,
+                      nonce: board.nonceReadOnly || ""
+                  }
+              };
+
               var items = board.cards.map(function(card, index) {
                   var cardId = card.id;
 
-                  if (card.form && card.form !== "") {
-                      try {
-                          var textarea = document.createElement('textarea');
-                          textarea.innerHTML = card.form;
-                          var decoded = textarea.value;
-                          cardFormMap[cardId] = {
-                              form: JSON.parse(decoded),
-                              formRaw: decoded,
-                              nonce: card.nonce || "",
-                              activityId: card.activityId || "",
-                              canDrag: card.canDrag || false
-                          };
-                      } catch(e) {
-                          console.warn("Failed to parse form for card " + cardId, e);
-                          cardFormMap[cardId] = { form: {}, formRaw: "{}", nonce: "", activityId: "", canDrag: false };
-                      }
-                  } else {
-                      cardFormMap[cardId] = { form: {}, formRaw: "{}", nonce: "", activityId: "", canDrag: false };
-                  }
+                  cardFormMap[cardId] = {
+                      status: card.status || boardId,
+                      isEditable: card.isEditable || false,
+                      activityId: card.activityId || "",
+                      canDrag: card.canDrag || false
+                  };
 
                   var iconHtml = card.isEditable 
                         ? "<i class='fas fa-pencil-alt card-icon' title='Edit'></i>" 
@@ -251,9 +265,18 @@
       }
 
       function openCardForm(cardId) {
-          var entry = cardFormMap[cardId] || {};
-          var formRaw = entry.formRaw || "{}";
-          var nonce = entry.nonce || "";
+          var cardData = cardFormMap[cardId] || {};
+          var boardId = cardData.status;
+          var boardForms = boardFormMap[boardId];
+          
+          if (!boardForms) {
+              alert("No board configuration found for this card.");
+              return;
+          }
+          
+          var formConfig = cardData.isEditable ? boardForms.editable : boardForms.readOnly;
+          var formRaw = formConfig.formRaw || "{}";
+          var nonce = formConfig.nonce || "";
 
           if (!formRaw || formRaw === "{}" || formRaw === "") {
               alert("There is No Activity or Form In This Card");
@@ -296,6 +319,7 @@
                   if (resp.validation_error) {
                       var errors = Object.values(resp.validation_error).join("\n");
                       revertCard(cardId, el, sourceBoardId);
+                      alert(errors + "\nstatus: " + targetBoardId);
                       el.style.opacity = '1';
                       return;
                   }

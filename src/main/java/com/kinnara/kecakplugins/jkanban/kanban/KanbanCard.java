@@ -9,16 +9,13 @@ public class KanbanCard {
     private final String currentAssigneeName;
     private final String activityId;
     private final String activityName;
-    private final String form;
-    private final String nonce;
     private final boolean canDrag;
-    private final boolean isEditable;
+    private final boolean canEdit;
+
 
     public KanbanCard(String recordId, String title, String status, String requesterName,
                       String currentAssigneeName, String activityId,
-                      String activityName,
-                      String form,
-                      String nonce, boolean canDrag, boolean isEditable
+                      String activityName, boolean canDrag, boolean canEdit
     ) {
         this.recordId = recordId;
         this.title = title;
@@ -27,10 +24,8 @@ public class KanbanCard {
         this.currentAssigneeName = currentAssigneeName;
         this.activityId = activityId;
         this.activityName = activityName;
-        this.form = form;
-        this.nonce = nonce;
         this.canDrag = canDrag;
-        this.isEditable = isEditable;
+        this.canEdit = canEdit;
     }
 
     public String getCurrentAssigneeName() {
@@ -53,16 +48,8 @@ public class KanbanCard {
         return requesterName;
     }
 
-    public String getForm() {
-        return form;
-    }
-
     public String getRecordId() {
         return recordId;
-    }
-
-    public String getNonce() {
-        return nonce;
     }
 
     public String getActivityId() {
@@ -74,7 +61,7 @@ public class KanbanCard {
     }
 
     public boolean isEditable() {
-        return isEditable;
+        return canEdit;
     }
 
 //    public String getAssignmentId() {

@@ -84,13 +84,41 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
 
         //Make a Kanban Board
         List<KanbanBoard> boards = new ArrayList<>();
+        boolean isSingleForm = "true".equals(getPropertyString("singleFormCheckBox"));
+        String globalFormDefId = getPropertyString("formDefId");
+
         if (options != null) {
             for (Map<String, String> option : options) {
-                boards.add(new KanbanBoard(
+                String boardFormDefId = isSingleForm ? globalFormDefId : option.get("formDefId");
+                if (boardFormDefId == null || boardFormDefId.isEmpty()) {
+                    boardFormDefId = globalFormDefId; // fallback
+                }
+
+                String formEditableStr = "";
+                String nonceEditable = "";
+                String formReadOnlyStr = "";
+                String nonceReadOnly = "";
+
+                if (boardFormDefId != null && !boardFormDefId.isEmpty()) {
+                    JSONObject formEditable = getJsonForm(boardFormDefId, false);
+                    nonceEditable = generateNonce(appDefinition, formEditable.toString());
+                    formEditableStr = StringEscapeUtils.escapeHtml4(formEditable.toString());
+
+                    JSONObject formReadOnly = getJsonForm(boardFormDefId, true);
+                    nonceReadOnly = generateNonce(appDefinition, formReadOnly.toString());
+                    formReadOnlyStr = StringEscapeUtils.escapeHtml4(formReadOnly.toString());
+                }
+
+                KanbanBoard board = new KanbanBoard(
                         option.get("value"),
                         option.get("label"),
-                        option.get("colour")
-                ));
+                        option.get("colour"),
+                        formEditableStr,
+                        nonceEditable,
+                        formReadOnlyStr,
+                        nonceReadOnly
+                );
+                boards.add(board);
             }
         }
         kanbanCards.forEach(kanban -> {
@@ -160,10 +188,8 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
     private KanbanCard buildKanbanCard(Map<String, Object> row, String appId, String appVersion, AppDefinition appDefinition, User currentUser) {
 
         ApplicationContext appContext = AppUtil.getApplicationContext();
-        AppService appService = (AppService) appContext.getBean("appService");
 
         WorkflowManager workflowManager = (WorkflowManager) appContext.getBean("workflowManager");
-        PluginManager pluginManager = (PluginManager) appContext.getBean("pluginManager");
         DirectoryManager directoryManager = (DirectoryManager) appContext.getBean("directoryManager");
 
         String recordId = row.get("id").toString();
@@ -176,48 +202,26 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
                 ? requesterUser.getFirstName() + " " + requesterUser.getLastName()
                 : requesterName;
 
-        WorkflowAssignment assignment = workflowManager.getAssignmentByRecordId(recordId, getProcessDefId(), null, null);
+        WorkflowAssignment assignment = workflowManager.getAssignmentByRecordId(recordId, null, null, null);
 
         String activityId = "";
         String activityName = ResourceBundleUtil.getMessage("jkanban.noActivityYet");
         String currentAssigneeUserName = "";
-        //String displayAssigneeName = "No Assignee";
         String displayAssigneeName = ResourceBundleUtil.getMessage("jkanban.noAssigneeYet");
-        String formDefId = "";
 
         if (assignment != null) {
-//            String activityDefId = assignment.getActivityDefId();
             activityId = assignment.getActivityId();
             activityName = assignment.getActivityName();
             currentAssigneeUserName = assignment.getAssigneeName();
-
-            //LogUtil.info(getClassName(), "activityId: " + activityId);
-
-//            PackageActivityForm packageActivityForm = appService.retrieveMappedForm(appId, appVersion, getProcessDefId(), activityDefId);
-//            if (packageActivityForm != null) {
-//                formDefId = packageActivityForm.getFormId();
-//            }
 
             User assigneeUser = directoryManager.getUserByUsername(currentAssigneeUserName);
             if (assigneeUser != null) {
                 displayAssigneeName = assigneeUser.getFirstName() + " " + assigneeUser.getLastName();
             }
         }
-
-        //LogUtil.info(getClassName(), "formDefId: " + formDefId);
+        LogUtil.info(getClassName(), "processDefId: " + getProcessDefId());
 
         boolean canEdit = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
-
-        if (formDefId.isEmpty()) {
-            formDefId = getPropertyString("formDefId");
-        }
-
-        JSONObject form = new JSONObject();
-        String nonce = "";
-        if (formDefId != null && !formDefId.isEmpty()) {
-            form = getJsonForm(formDefId, !canEdit);
-            nonce = generateNonce(appDefinition, form.toString());
-        }
 
         boolean canDrag = assignment != null
                 && Objects.equals(currentAssigneeUserName, currentUser.getUsername());
@@ -230,8 +234,6 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
                 displayAssigneeName,
                 activityId,
                 activityName,
-                StringEscapeUtils.escapeHtml4(form.toString()),
-                nonce,
                 canDrag,
                 canEdit
         );
@@ -307,6 +309,11 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
                 boardObj.put("label", board.getLabel());
                 boardObj.put("colour", board.getColour());
 
+                boardObj.put("formEditable", board.getFormEditable());
+                boardObj.put("nonceEditable", board.getNonceEditable());
+                boardObj.put("formReadOnly", board.getFormReadOnly());
+                boardObj.put("nonceReadOnly", board.getNonceReadOnly());
+
                 JSONArray cardsArray = new JSONArray();
                 for (KanbanCard card : board.getCards()) {
                     JSONObject cardObj = new JSONObject();
@@ -318,10 +325,8 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
                         cardObj.put("currentAssigneeName", card.getCurrentAssigneeName());
                         cardObj.put("activityId", card.getActivityId());
                         cardObj.put("activityName", card.getActivityName());
-                        cardObj.put("isEditable", card.isEditable());
-                        cardObj.put("form", card.getForm() != null ? card.getForm() : "");
-                        cardObj.put("nonce", card.getNonce());
                         cardObj.put("canDrag", card.isCanDrag());
+                        cardObj.put("isEditable", card.isEditable());
                     } catch (Exception e) {
                         LogUtil.error(getClassName(), e, "Error building card JSON");
                     }

@@ -48,12 +48,25 @@
         "required": "true"
       },
       {
+        "name": "singleFormCheckBox",
+        "label": "Single Form",
+        "type": "checkbox",
+        "value": "",
+        "options": [
+          {
+            "value": "true",
+            "label": ""
+          }
+        ]
+      },
+      {
         "name": "formDefId",
         "label": "Form",
         "type" : "selectbox",
         "required" : "true",
         "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/forms/options",
-        "description": "Form for View if Process Complete"
+        "control_field" : "singleFormCheckBox",
+        "control_value" :  "true"
       },
       {
         "name": "options",
@@ -72,6 +85,13 @@
           {
             "key": "colour",
             "label": "Colour"
+          },
+          {
+            "key": "formDefId",
+            "label": "Form Def Id",
+            "type" : "selectbox",
+            "required" : "true",
+            "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/forms/options"
           }
         ]
       }
