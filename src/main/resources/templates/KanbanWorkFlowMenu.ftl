@@ -229,8 +229,7 @@
           });
       }
 
-      function popupForm(elementId, appId, appVersion, formRaw, nonce, args, data, height, width) {
-          var isEditable = ${editable?c};
+      function popupForm(elementId, appId, appVersion, formRaw, nonce, args, data, height, width, isEditable) {
           var label = isEditable ? 'Submit' : 'Close';
           var formUrl = '${request.contextPath}/web/app/' + appId + '/' + appVersion + '/form/embed?_submitButtonLabel=' + label;
           var frameId = args.frameId = 'Frame_' + elementId;
@@ -290,7 +289,7 @@
           var width = "900";
           var args = {};
 
-          popupForm(cardId, appId, appVersion, formRaw, nonce, args, data, height, width);
+          popupForm(cardId, appId, appVersion, formRaw, nonce, args, data, height, width, cardData.isEditable);
       }
 
       function moveCard(cardId, targetBoardId, sourceBoardId, el) {
