@@ -19,6 +19,7 @@ import org.joget.apps.form.model.Element;
 import org.joget.apps.form.model.FormData;
 import org.joget.apps.form.service.FormService;
 import org.joget.apps.form.service.FormUtil;
+import org.joget.apps.userview.lib.InboxMenu;
 import org.joget.apps.userview.model.UserviewMenu;
 import org.joget.commons.util.LogUtil;
 import org.joget.commons.util.ResourceBundleUtil;
@@ -150,21 +151,24 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
 
     @Override
     public String getPropertyOptions() {
-        return AppUtil.readPluginResource(getClassName(), "/properties/userview/KanbanWorkFlowMenu.json");
+        Object[] args = new Object[]{
+                InboxMenu.class.getName()
+        };
+        return AppUtil.readPluginResource(getClassName(), "/properties/userview/KanbanWorkFlowMenu.json", args, true, "");
     }
 
     private KanbanCard buildKanbanCard(Map<String, Object> row, String appId, String appVersion, AppDefinition appDefinition, User currentUser) {
 
         ApplicationContext appContext = AppUtil.getApplicationContext();
-        AppService appService         = (AppService) appContext.getBean("appService");
+        AppService appService = (AppService) appContext.getBean("appService");
 
         WorkflowManager workflowManager = (WorkflowManager) appContext.getBean("workflowManager");
         PluginManager pluginManager = (PluginManager) appContext.getBean("pluginManager");
         DirectoryManager directoryManager = (DirectoryManager) appContext.getBean("directoryManager");
 
-        String recordId      = row.get("id").toString();
-        String title         = row.get(getTitleField()) != null ? row.get(getTitleField()).toString() : "";
-        String status        = row.get(getStatusField()) != null ? row.get(getStatusField()).toString() : "";
+        String recordId = row.get("id").toString();
+        String title = row.get(getTitleField()) != null ? row.get(getTitleField()).toString() : "";
+        String status = row.get(getStatusField()) != null ? row.get(getStatusField()).toString() : "";
         String requesterName = row.get("createdBy") != null ? row.get("createdBy").toString() : "";
 
         User requesterUser = directoryManager.getUserByUsername(requesterName);
@@ -210,7 +214,7 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
         JSONObject form = new JSONObject();
         String nonce = "";
         if (formDefId != null && !formDefId.isEmpty()) {
-            form  = getJsonForm(formDefId, !canEdit);
+            form = getJsonForm(formDefId, !canEdit);
             nonce = generateNonce(appDefinition, form.toString());
         }
 
@@ -235,12 +239,15 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
     private String getStatusField() {
         return getPropertyString("statusField");
     }
+
     private String getTitleField() {
         return getPropertyString("titleField");
     }
+
     private String getProcessDefId() {
         return getPropertyString("processDefId");
     }
+
     private String getDatalistId() {
         return getPropertyString("dataListId");
     }
@@ -332,7 +339,7 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
 
     protected String generateNonce(AppDefinition appDefinition, String jsonForm) {
         return SecurityUtil.generateNonce(
-                new String[] { "EmbedForm", appDefinition.getAppId(), appDefinition.getVersion().toString(), jsonForm },
+                new String[]{"EmbedForm", appDefinition.getAppId(), appDefinition.getVersion().toString(), jsonForm},
                 1);
     }
 
