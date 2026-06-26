@@ -21,6 +21,7 @@ import org.joget.apps.form.service.FormService;
 import org.joget.apps.form.service.FormUtil;
 import org.joget.apps.userview.model.UserviewMenu;
 import org.joget.commons.util.LogUtil;
+import org.joget.commons.util.ResourceBundleUtil;
 import org.joget.commons.util.SecurityUtil;
 import org.joget.directory.model.User;
 import org.joget.directory.model.service.DirectoryManager;
@@ -158,6 +159,7 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
         AppService appService         = (AppService) appContext.getBean("appService");
 
         WorkflowManager workflowManager = (WorkflowManager) appContext.getBean("workflowManager");
+        PluginManager pluginManager = (PluginManager) appContext.getBean("pluginManager");
         DirectoryManager directoryManager = (DirectoryManager) appContext.getBean("directoryManager");
 
         String recordId      = row.get("id").toString();
@@ -173,7 +175,7 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
         WorkflowAssignment assignment = workflowManager.getAssignmentByRecordId(recordId, getProcessDefId(), null, null);
 
         String activityId = "";
-        String activityName = "No Activity Yet";
+        String activityName = ResourceBundleUtil.getMessage("jkanban.noActivityYet");
         String currentAssigneeUserName = "";
         String displayAssigneeName = "No Assignee Yet";
         String formDefId = "";
