@@ -171,11 +171,6 @@
                   var cardId = el.getAttribute("data-eid");
                   var entry = cardFormMap[cardId] || {};
 
-                  if (!entry.canDrag) {
-                      revertCard(cardId, el, source.parentElement.getAttribute("data-id"));
-                      return;
-                  }
-
                   var targetBoardId = target.parentElement.getAttribute("data-id");
                   var sourceBoardId = source.parentElement.getAttribute("data-id");
                   if (targetBoardId === sourceBoardId) return;
@@ -296,8 +291,8 @@
           var entry = cardFormMap[cardId] || {};
           var activityId = entry.activityId || "";
 
-          if (!activityId) {
-              alert("This Card Cannot Move, No activity active.");
+          if (!entry.canDrag || !activityId) {
+              alert("This Card Cannot Move, No Assignee or No Activity yet");
               revertCard(cardId, el, sourceBoardId);
               return;
           }
@@ -315,14 +310,24 @@
               }),
               dataType: "json",
               success: function(resp) {
-                  if (resp.validation_error) {
-                      var errors = Object.values(resp.validation_error).join("\n");
+                  var isError = resp.validation_error || resp.status === "error" || resp.error || (resp.errors && Object.keys(resp.errors).length > 0);
+                  if (isError) {
+                      var errors = "Error occurred";
+                      if (resp.validation_error) {
+                          errors = Object.values(resp.validation_error).join("\n");
+                      } else if (resp.errors && typeof resp.errors === 'object') {
+                          errors = Object.values(resp.errors).join("\n");
+                      } else if (typeof resp.error === 'string') {
+                          errors = resp.error;
+                      } else if (resp.message) {
+                          errors = resp.message;
+                      }
+
                       revertCard(cardId, el, sourceBoardId);
-                      alert(errors + "\nstatus: " + targetBoardId);
+                      alert(errors);
                       el.style.opacity = '1';
                       return;
                   }
-                  console.log("Card moved successfully", resp);
                   setTimeout(refreshKanbanBoard, 1000);
               },
               error: function(xhr) {

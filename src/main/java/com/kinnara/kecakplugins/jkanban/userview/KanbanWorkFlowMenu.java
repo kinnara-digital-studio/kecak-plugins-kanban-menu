@@ -29,6 +29,7 @@ import org.joget.directory.model.User;
 import org.joget.directory.model.service.DirectoryManager;
 import org.joget.plugin.base.PluginManager;
 import org.joget.workflow.model.WorkflowAssignment;
+import org.joget.workflow.model.WorkflowProcess;
 import org.joget.workflow.model.service.WorkflowManager;
 import org.joget.workflow.model.service.WorkflowUserManager;
 import org.json.JSONArray;
@@ -80,7 +81,7 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
 
         List<KanbanCard> kanbanCards = new ArrayList<>();
         for (Map<String, Object> row : validRows) {
-            kanbanCards.add(buildKanbanCard(row, appId, appVersion, appDefinition, currentUser));
+            kanbanCards.add(buildKanbanCard(row, appId, appVersion, currentUser));
         }
 
         //Make a Kanban Board
@@ -186,46 +187,49 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
         return AppUtil.readPluginResource(getClassName(), "/properties/userview/KanbanWorkFlowMenu.json", args, true, "");
     }
 
-    private KanbanCard buildKanbanCard(Map<String, Object> row, String appId, String appVersion, AppDefinition appDefinition, User currentUser) {
+    private KanbanCard buildKanbanCard(Map<String, Object> row, String appId, String appVersion, User currentUser) {
 
         ApplicationContext appContext = AppUtil.getApplicationContext();
 
-        WorkflowManager workflowManager = (WorkflowManager) appContext.getBean("workflowManager");
         DirectoryManager directoryManager = (DirectoryManager) appContext.getBean("directoryManager");
 
         String recordId = row.get("id").toString();
         String title = row.get(getTitleField()) != null ? row.get(getTitleField()).toString() : "";
         String status = row.get(getStatusField()) != null ? row.get(getStatusField()).toString() : "";
         String requesterName = row.get("createdBy") != null ? row.get("createdBy").toString() : "";
-
         User requesterUser = directoryManager.getUserByUsername(requesterName);
         String displayRequesterName = requesterUser != null
                 ? requesterUser.getFirstName() + " " + requesterUser.getLastName()
                 : requesterName;
-
-        WorkflowAssignment assignment = workflowManager.getAssignmentByRecordId(recordId, null, null, null);
 
         String activityId = "";
         String activityName = ResourceBundleUtil.getMessage("jkanban.noActivityYet");
         String currentAssigneeUserName = "";
         String displayAssigneeName = ResourceBundleUtil.getMessage("jkanban.noAssigneeYet");
 
-        if (assignment != null) {
-            activityId = assignment.getActivityId();
-            activityName = assignment.getActivityName();
-            currentAssigneeUserName = assignment.getAssigneeName();
+        AppService appService = (AppService) appContext.getBean("appService");
+        WorkflowProcess process = appService.getWorkflowProcessForApp(appId, appVersion, getProcessDefId());
+        boolean canDrag = false;
 
-            User assigneeUser = directoryManager.getUserByUsername(currentAssigneeUserName);
-            if (assigneeUser != null) {
-                displayAssigneeName = assigneeUser.getFirstName() + " " + assigneeUser.getLastName();
+        if (process != null) {
+            WorkflowManager workflowManager = (WorkflowManager) appContext.getBean("workflowManager");
+
+            String processDefId = process.getId();
+            WorkflowAssignment assignment = workflowManager.getAssignmentByRecordId(recordId, processDefId, null, null);
+
+            if (assignment != null) {
+                activityId = assignment.getActivityId();
+                activityName = assignment.getActivityName();
+                currentAssigneeUserName = assignment.getAssigneeName();
+                User assigneeUser = directoryManager.getUserByUsername(currentAssigneeUserName);
+                if (assigneeUser != null) {
+                    displayAssigneeName = assigneeUser.getFirstName() + " " + assigneeUser.getLastName();
+                }
+                canDrag = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
             }
         }
-        LogUtil.info(getClassName(), "processDefId: " + getProcessDefId());
 
         boolean canEdit = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
-
-        boolean canDrag = assignment != null
-                && Objects.equals(currentAssigneeUserName, currentUser.getUsername());
 
         return new KanbanCard(
                 recordId,
