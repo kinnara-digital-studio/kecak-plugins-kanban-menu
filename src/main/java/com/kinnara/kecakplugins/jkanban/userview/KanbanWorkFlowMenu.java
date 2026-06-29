@@ -1,5 +1,6 @@
 package com.kinnara.kecakplugins.jkanban.userview;
 
+import com.kinnara.kecakplugins.jkanban.datalist.KanbanWorkflowDataListBinder;
 import com.kinnara.kecakplugins.jkanban.kanban.KanbanBoard;
 import com.kinnara.kecakplugins.jkanban.kanban.KanbanCard;
 import com.kinnarastudio.commons.Try;
@@ -85,7 +86,7 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
         //Make a Kanban Board
         List<KanbanBoard> boards = new ArrayList<>();
         boolean isSingleForm = "true".equals(getPropertyString("singleFormCheckBox"));
-        String globalFormDefId = getPropertyString("formDefId");
+        String globalFormDefId = getFormDefId();
 
         if (options != null) {
             for (Map<String, String> option : options) {
@@ -261,13 +262,28 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
                 .getBean("datalistDefinitionDao");
         DataListService dataListService = (DataListService) applicationContext.getBean("dataListService");
         AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
-        DatalistDefinition datalistDefinition = datalistDefinitionDao.loadById(dataListId, appDefinition);
-        if (datalistDefinition == null) {
-            LogUtil.warn(getClassName(), "DataList Definition [" + dataListId + "] not found");
-            return null;
+
+        String jsonDataList;
+        if(dataListId.isEmpty()) {
+            Object[] args =  new Object[]{
+                    KanbanWorkflowDataListBinder.class.getName(),
+                    getFormDefId(),
+                    getProcessDefId(),
+                    getTitleField(),
+                    getStatusField()
+            };
+            jsonDataList = AppUtil.readPluginResource(getClassName(), "/definitions/datalist/KanbanWorkflowDataList.json", args, true, "");
+        } else {
+            DatalistDefinition datalistDefinition = datalistDefinitionDao.loadById(dataListId, appDefinition);
+            if (datalistDefinition == null) {
+                LogUtil.warn(getClassName(), "DataList Definition [" + dataListId + "] not found");
+                return null;
+            }
+
+            jsonDataList = datalistDefinition.getJson();
         }
 
-        DataList dataList = dataListService.fromJson(datalistDefinition.getJson());
+        DataList dataList = dataListService.fromJson(jsonDataList);
         if (dataList == null) {
             LogUtil.warn(getClassName(), "DataList [" + dataListId + "] not found");
             return null;
@@ -358,6 +374,10 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
             }
         }
         return false;
+    }
+
+    protected String getFormDefId() {
+        return getPropertyString("formDefId");
     }
 
 }

@@ -1,0 +1,54 @@
+{
+  "id": "KanbanWorkflowDataList",
+  "name": "Kanban Workflow DataList",
+  "pageSize": "0",
+  "order": "",
+  "orderBy": "",
+  "showPageSizeSelector": "true",
+  "pageSizeSelectorOptions": "10,20,30,40,50,100",
+  "buttonPosition": "bottomLeft",
+  "checkboxPosition": "left",
+  "rowActionPosition": "right",
+  "useSession": "false",
+  "considerFilterWhenGetTotal": "",
+  "description": "",
+  "actions": [],
+  "rowActions": [],
+  "filters": [],
+  "binder": {
+    "className": "%s",
+    "properties": {
+      "formDefId": "%s",
+      "extraCondition": "",
+      "deleted": "",
+      "crossOrganization": "",
+      "processDefId": "%s"
+    }
+  },
+  "columns": [
+    {
+      "id": "column_0",
+      "label": "ID",
+      "name": "id",
+      "filterable": true,
+      "hidden": "false",
+      "sortable": "false"
+    },
+    {
+      "id": "column_1",
+      "label": "Title Field",
+      "name": "%s",
+      "filterable": true,
+      "hidden": "false",
+      "sortable": "false"
+    },
+    {
+      "id": "column_2",
+      "label": "Status Field",
+      "name": "%s",
+      "filterable": true,
+      "hidden": "false",
+      "sortable": "false"
+    }
+  ]
+}

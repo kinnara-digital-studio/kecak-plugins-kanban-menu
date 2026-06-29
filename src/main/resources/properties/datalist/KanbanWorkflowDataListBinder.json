@@ -1,0 +1,14 @@
+[
+  {
+    "title": "Workflow Process",
+    "properties": [
+      {
+        "name" : "processDefId",
+        "label" : "@@userview.inboxmenu.process@@",
+        "type" : "selectbox",
+        "required" : "true",
+        "options_ajax" : "[CONTEXT_PATH]/web/json/app[APP_PATH]/plugin/%s/service?action=getProcesses"
+      }
+    ]
+  }
+]
