@@ -33,6 +33,17 @@
         "label": "DataList",
         "type": "selectbox",
         "options_ajax": "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/datalist/options"
+      },{
+        "name": "isRunningProcessOnly",
+        "label": "Show only running process",
+        "type": "checkbox",
+        "value": "true",
+        "options": [
+          {
+            "value": "true",
+            "label": ""
+          }
+        ]
       },
       {
         "name": "statusField",

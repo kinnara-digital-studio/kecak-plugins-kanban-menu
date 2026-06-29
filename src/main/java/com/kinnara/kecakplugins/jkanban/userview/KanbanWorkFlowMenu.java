@@ -10,7 +10,6 @@ import org.joget.apps.app.dao.FormDefinitionDao;
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.model.DatalistDefinition;
 import org.joget.apps.app.model.FormDefinition;
-import org.joget.apps.app.model.PackageActivityForm;
 import org.joget.apps.app.service.AppService;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.model.DataList;
@@ -73,10 +72,11 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
 
         // Get Datalist
         DataList dataList = getDataList(datalistId);
+        String primaryKeyColumn = dataList.getBinder().getPrimaryKeyColumnName();
         DataListCollection<Map<String, Object>> rows = dataList.getRows();
         List<Map<String, Object>> validRows = rows.stream()
-                .filter(row -> row.get("id") != null)
-                .filter(row -> !row.get("id").toString().isEmpty())
+                .filter(row -> row.get(primaryKeyColumn) != null)
+                .filter(row -> !row.get(primaryKeyColumn).toString().isEmpty())
                 .collect(Collectors.toList());
 
         List<KanbanCard> kanbanCards = new ArrayList<>();
@@ -269,10 +269,11 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
 
         String jsonDataList;
         if(dataListId.isEmpty()) {
+            String processDefId = isRunningProcessOnly() ? getProcessDefId() : "";
             Object[] args =  new Object[]{
                     KanbanWorkflowDataListBinder.class.getName(),
                     getFormDefId(),
-                    getProcessDefId(),
+                    processDefId,
                     getTitleField(),
                     getStatusField()
             };
@@ -382,6 +383,10 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
 
     protected String getFormDefId() {
         return getPropertyString("formDefId");
+    }
+
+    protected boolean isRunningProcessOnly() {
+        return "true".equalsIgnoreCase(getPropertyString("isRunningProcessOnly"));
     }
 
 }

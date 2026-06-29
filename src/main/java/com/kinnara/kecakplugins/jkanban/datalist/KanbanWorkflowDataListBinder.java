@@ -34,13 +34,16 @@ public class KanbanWorkflowDataListBinder extends FormRowDataListBinder {
         AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
         String appId = appDefinition.getPackageDefinition().getAppId();
         String processId = getProcessDefId();
-        Collection<WorkflowProcess> runningProcessList = getRunningProcessList(appId, processId);
-        Collection<String> recordIds = Optional.ofNullable(runningProcessList)
-                .orElseGet(Collections::emptyList)
-                .stream()
-                .map(WorkflowProcess::getRecordId)
-                .collect(Collectors.toList());
-        filterQueryObjects = addFilterByRecordId(filterQueryObjects, recordIds);
+
+        if(!processId.isEmpty()) {
+            Collection<WorkflowProcess> runningProcessList = getRunningProcessList(appId, processId);
+            Collection<String> recordIds = Optional.ofNullable(runningProcessList)
+                    .orElseGet(Collections::emptyList)
+                    .stream()
+                    .map(WorkflowProcess::getRecordId)
+                    .collect(Collectors.toList());
+            filterQueryObjects = addFilterByRecordId(filterQueryObjects, recordIds);
+        }
         return super.getData(dataList, properties, filterQueryObjects, sort, desc, start, rows);
     }
 
@@ -49,13 +52,16 @@ public class KanbanWorkflowDataListBinder extends FormRowDataListBinder {
         AppDefinition appDefinition = AppUtil.getCurrentAppDefinition();
         String appId = appDefinition.getPackageDefinition().getAppId();
         String processId = getProcessDefId();
-        Collection<WorkflowProcess> runningProcessList = getRunningProcessList(appId, processId);
-        Collection<String> recordIds = Optional.ofNullable(runningProcessList)
-                .orElseGet(Collections::emptyList)
-                .stream()
-                .map(WorkflowProcess::getRecordId)
-                .collect(Collectors.toList());
-        filterQueryObjects = addFilterByRecordId(filterQueryObjects, recordIds);
+        if(!processId.isEmpty()) {
+            Collection<WorkflowProcess> runningProcessList = getRunningProcessList(appId, processId);
+            Collection<String> recordIds = Optional.ofNullable(runningProcessList)
+                    .orElseGet(Collections::emptyList)
+                    .stream()
+                    .map(WorkflowProcess::getRecordId)
+                    .collect(Collectors.toList());
+            filterQueryObjects = addFilterByRecordId(filterQueryObjects, recordIds);
+        }
+
         return super.getDataTotalRowCount(dataList, properties, filterQueryObjects);
     }
 
