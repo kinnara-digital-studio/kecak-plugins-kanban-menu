@@ -7,11 +7,11 @@ public class KanbanBoard {
     private final String value;
     private final String label;
     private final String colour;
-    
-    private final String formEditable;
-    private final String nonceEditable;
-    private final String formReadOnly;
-    private final String nonceReadOnly;
+
+    private String formEditable;
+    private String nonceEditable;
+    private String formReadOnly;
+    private String nonceReadOnly;
 
     private final List<KanbanCard> cards = new ArrayList<>();
 
@@ -49,4 +49,20 @@ public class KanbanBoard {
     public String getNonceEditable() { return nonceEditable; }
     public String getFormReadOnly() { return formReadOnly; }
     public String getNonceReadOnly() { return nonceReadOnly; }
+
+    public void setFormEditable(String formEditable) {
+        this.formEditable = formEditable;
+    }
+
+    public void setNonceEditable(String nonceEditable) {
+        this.nonceEditable = nonceEditable;
+    }
+
+    public void setNonceReadOnly(String nonceReadOnly) {
+        this.nonceReadOnly = nonceReadOnly;
+    }
+
+    public void setFormReadOnly(String formReadOnly) {
+        this.formReadOnly = formReadOnly;
+    }
 }

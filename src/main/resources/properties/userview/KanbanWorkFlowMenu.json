@@ -95,13 +95,6 @@
           {
             "key": "colour",
             "label": "Colour"
-          },
-          {
-            "key": "formDefId",
-            "label": "Form Def Id",
-            "type" : "selectbox",
-            "required" : "true",
-            "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/forms/options"
           }
         ]
       }

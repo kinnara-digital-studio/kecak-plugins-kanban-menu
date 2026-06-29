@@ -10,6 +10,7 @@ import org.joget.apps.app.dao.FormDefinitionDao;
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.model.DatalistDefinition;
 import org.joget.apps.app.model.FormDefinition;
+import org.joget.apps.app.model.PackageActivityForm;
 import org.joget.apps.app.service.AppService;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.model.DataList;
@@ -59,18 +60,17 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
         String appId = appDefinition.getAppId();
         String appVersion = appDefinition.getVersion().toString();
 
-        //getCurrentUser
         WorkflowUserManager workflowUserManager = (WorkflowUserManager) applicationContext.getBean("workflowUserManager");
         User currentUser = workflowUserManager.getCurrentUser();
-
-        //for template
         PluginManager pluginManager = (PluginManager) applicationContext.getBean("pluginManager");
+        DirectoryManager directoryManager = (DirectoryManager) applicationContext.getBean("directoryManager");
+        AppService appService = (AppService) applicationContext.getBean("appService");
+        WorkflowManager workflowManager = (WorkflowManager) applicationContext.getBean("workflowManager");
+        WorkflowProcess process = appService.getWorkflowProcessForApp(appId, appVersion, getProcessDefId());
 
-        //Properties
+        String processDefId = process != null ? process.getId() : null;
         String datalistId = getDatalistId();
-        Map<String, String>[] options = getPropertyGrid("options");
 
-        // Get Datalist
         DataList dataList = getDataList(datalistId);
         String primaryKeyColumn = dataList.getBinder().getPrimaryKeyColumnName();
         DataListCollection<Map<String, Object>> rows = dataList.getRows();
@@ -79,56 +79,89 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
                 .filter(row -> !row.get(primaryKeyColumn).toString().isEmpty())
                 .collect(Collectors.toList());
 
-        List<KanbanCard> kanbanCards = new ArrayList<>();
-        for (Map<String, Object> row : validRows) {
-            kanbanCards.add(buildKanbanCard(row, appId, appVersion, currentUser));
-        }
-
-        //Make a Kanban Board
         List<KanbanBoard> boards = new ArrayList<>();
-        boolean isSingleForm = "true".equals(getPropertyString("singleFormCheckBox"));
-        String globalFormDefId = getFormDefId();
 
-        if (options != null) {
-            for (Map<String, String> option : options) {
-                String boardFormDefId = isSingleForm ? globalFormDefId : option.get("formDefId");
-                if (boardFormDefId == null || boardFormDefId.isEmpty()) {
-                    boardFormDefId = globalFormDefId; // fallback
+        Map<String, String>[] options = getPropertyGrid("options");
+        for (Map<String, String> option : options) {
+            String boardId = option.get("value");
+
+            KanbanBoard board = new KanbanBoard(
+                    boardId,
+                    option.get("label"),
+                    option.get("colour"),
+                    "", "", "", ""
+            );
+
+            String trackedFormDefId = null;
+
+            for (Map<String, Object> row : validRows) {
+                String status = row.get(getStatusField()) != null ? row.get(getStatusField()).toString() : "";
+
+                if (!boardId.equals(status)) {
+                    continue;
                 }
 
-                String formEditableStr = "";
-                String nonceEditable = "";
-                String formReadOnlyStr = "";
-                String nonceReadOnly = "";
+                String recordId = row.get("id").toString();
+                String title = row.get(getTitleField()) != null ? row.get(getTitleField()).toString() : "";
+                String requesterName = row.get("createdBy") != null ? row.get("createdBy").toString() : "";
 
-                if (boardFormDefId != null && !boardFormDefId.isEmpty()) {
-                    JSONObject formEditable = getJsonForm(boardFormDefId, false);
-                    nonceEditable = generateNonce(appDefinition, formEditable.toString());
-                    formEditableStr = StringEscapeUtils.escapeHtml4(formEditable.toString());
+                User requesterUser = directoryManager.getUserByUsername(requesterName);
+                String displayRequesterName = requesterUser != null
+                        ? requesterUser.getFirstName() + " " + requesterUser.getLastName()
+                        : requesterName;
 
-                    JSONObject formReadOnly = getJsonForm(boardFormDefId, true);
-                    nonceReadOnly = generateNonce(appDefinition, formReadOnly.toString());
-                    formReadOnlyStr = StringEscapeUtils.escapeHtml4(formReadOnly.toString());
+                String activityId = "";
+                String activityName = ResourceBundleUtil.getMessage("jkanban.noActivityYet");
+                String currentAssigneeUserName = "";
+                String displayAssigneeName = ResourceBundleUtil.getMessage("jkanban.noAssigneeYet");
+                boolean canDrag = false;
+
+                if (processDefId != null) {
+                    WorkflowAssignment assignment = workflowManager.getAssignmentByRecordId(recordId, processDefId, null, null);
+
+                    if (assignment != null) {
+                        activityId = assignment.getActivityId();
+                        activityName = assignment.getActivityName();
+                        currentAssigneeUserName = assignment.getAssigneeName();
+                        String activityDefId = assignment.getActivityDefId();
+
+                        PackageActivityForm packageActivityForm = appService.retrieveMappedForm(
+                                appId, appVersion, getProcessDefId(), activityDefId);
+                        if (packageActivityForm != null) {
+                            String activityFormDefId = packageActivityForm.getFormId();
+                            if (activityFormDefId != null && !activityFormDefId.isEmpty() && !activityFormDefId.equals(trackedFormDefId)) {
+                                JSONObject formEditable = getJsonForm(activityFormDefId, false);
+                                String nonceEditable = generateNonce(appDefinition, formEditable.toString());
+                                board.setFormEditable(StringEscapeUtils.escapeHtml4(formEditable.toString()));
+                                board.setNonceEditable(nonceEditable);
+
+                                JSONObject formReadOnly = getJsonForm(activityFormDefId, true);
+                                String nonceReadOnly = generateNonce(appDefinition, formReadOnly.toString());
+                                board.setFormReadOnly(StringEscapeUtils.escapeHtml4(formReadOnly.toString()));
+                                board.setNonceReadOnly(nonceReadOnly);
+
+                                trackedFormDefId = activityFormDefId;
+                            }
+                        }
+
+                        User assigneeUser = directoryManager.getUserByUsername(currentAssigneeUserName);
+                        if (assigneeUser != null) {
+                            displayAssigneeName = assigneeUser.getFirstName() + " " + assigneeUser.getLastName();
+                        }
+                        canDrag = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
+                    }
                 }
 
-                KanbanBoard board = new KanbanBoard(
-                        option.get("value"),
-                        option.get("label"),
-                        option.get("colour"),
-                        formEditableStr,
-                        nonceEditable,
-                        formReadOnlyStr,
-                        nonceReadOnly
+                boolean canEdit = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
+
+                KanbanCard card = new KanbanCard(
+                        recordId, title, status, displayRequesterName,
+                        displayAssigneeName, activityId, activityName, canDrag, canEdit
                 );
-                boards.add(board);
+                board.addCard(card);
             }
+            boards.add(board);
         }
-        kanbanCards.forEach(kanban -> {
-            boards.stream()
-                    .filter(board -> board.getValue().equals(kanban.getStatus()))
-                    .findFirst()
-                    .ifPresent(board -> board.addCard(kanban));
-        });
 
         Map<String, Object> dataModel = new HashMap<>();
         dataModel.put("boards", boardsJson(boards).toString());
@@ -185,63 +218,6 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
                 InboxMenu.class.getName()
         };
         return AppUtil.readPluginResource(getClassName(), "/properties/userview/KanbanWorkFlowMenu.json", args, true, "");
-    }
-
-    private KanbanCard buildKanbanCard(Map<String, Object> row, String appId, String appVersion, User currentUser) {
-
-        ApplicationContext appContext = AppUtil.getApplicationContext();
-
-        DirectoryManager directoryManager = (DirectoryManager) appContext.getBean("directoryManager");
-
-        String recordId = row.get("id").toString();
-        String title = row.get(getTitleField()) != null ? row.get(getTitleField()).toString() : "";
-        String status = row.get(getStatusField()) != null ? row.get(getStatusField()).toString() : "";
-        String requesterName = row.get("createdBy") != null ? row.get("createdBy").toString() : "";
-        User requesterUser = directoryManager.getUserByUsername(requesterName);
-        String displayRequesterName = requesterUser != null
-                ? requesterUser.getFirstName() + " " + requesterUser.getLastName()
-                : requesterName;
-
-        String activityId = "";
-        String activityName = ResourceBundleUtil.getMessage("jkanban.noActivityYet");
-        String currentAssigneeUserName = "";
-        String displayAssigneeName = ResourceBundleUtil.getMessage("jkanban.noAssigneeYet");
-
-        AppService appService = (AppService) appContext.getBean("appService");
-        WorkflowProcess process = appService.getWorkflowProcessForApp(appId, appVersion, getProcessDefId());
-        boolean canDrag = false;
-
-        if (process != null) {
-            WorkflowManager workflowManager = (WorkflowManager) appContext.getBean("workflowManager");
-
-            String processDefId = process.getId();
-            WorkflowAssignment assignment = workflowManager.getAssignmentByRecordId(recordId, processDefId, null, null);
-
-            if (assignment != null) {
-                activityId = assignment.getActivityId();
-                activityName = assignment.getActivityName();
-                currentAssigneeUserName = assignment.getAssigneeName();
-                User assigneeUser = directoryManager.getUserByUsername(currentAssigneeUserName);
-                if (assigneeUser != null) {
-                    displayAssigneeName = assigneeUser.getFirstName() + " " + assigneeUser.getLastName();
-                }
-                canDrag = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
-            }
-        }
-
-        boolean canEdit = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
-
-        return new KanbanCard(
-                recordId,
-                title,
-                status,
-                displayRequesterName,
-                displayAssigneeName,
-                activityId,
-                activityName,
-                canDrag,
-                canEdit
-        );
     }
 
     private String getStatusField() {
