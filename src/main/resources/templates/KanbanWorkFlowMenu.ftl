@@ -14,12 +14,10 @@
         padding: 0;
         background: #f0f2f5;
       }
-
       #myKanban {
         overflow-x: auto;
         padding: 20px;
       }
-
       .kanban-board-header {
         border-radius: 4px 4px 0 0;
       }
@@ -31,6 +29,23 @@
         margin-bottom: 10px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.12);
         cursor: pointer;
+      }
+      .kanban-item-editable {
+          background: #fff;
+          box-shadow: -5px -5px 0px 0px rgba(0, 0, 0, 0.15);
+          padding: 8px;
+          margin: -11px;
+          border-radius: 6px;
+      }
+      .kanban-item-readonly {
+          background: #f0f0f0;
+          padding: 8px;
+          margin: -11px;
+          border-radius: 6px;
+      }
+      .kanban-item-readonly .card-title-text,
+      .kanban-item-readonly .card-details {
+          color: #999;
       }
 
       .card-title {
@@ -131,6 +146,8 @@
                         ? "<i class='fas fa-pencil-alt card-icon' title='Edit'></i>" 
                         : "<i class='fas fa-eye card-icon' title='View'></i>";
 
+                  var cardClass = card.isEditable ? "kanban-item-editable" : "kanban-item-readonly";
+
                   var html = "";
                   html += "<div class='card-title'>";
                   html += "  <span class='card-title-text'>" + (card.title || '') + "</span>" + iconHtml;
@@ -143,7 +160,7 @@
 
                   return {
                       id: cardId,
-                      title: html
+                      title: "<div class='" + cardClass + "'>" + html + "</div>"
                   };
               });
 
