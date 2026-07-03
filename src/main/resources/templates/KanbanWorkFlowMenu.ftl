@@ -132,7 +132,11 @@
                   }
               };
 
-              var items = board.cards.map(function(card, index) {
+              var sortedCards = board.cards.slice().sort(function(a, b) {
+                  return (b.isEditable ? 1 : 0) - (a.isEditable ? 1 : 0);
+              });
+
+              var items = sortedCards.map(function(card, index) {
                   var cardId = card.id;
 
                   cardFormMap[cardId] = {
