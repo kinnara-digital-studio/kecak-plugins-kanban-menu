@@ -10,6 +10,7 @@ import org.joget.apps.app.model.FormDefinition;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.model.DataList;
 import org.joget.apps.datalist.model.DataListAction;
+import org.joget.apps.datalist.model.DataListCollection;
 import org.joget.apps.datalist.service.DataListService;
 import org.joget.apps.form.service.FormService;
 import org.joget.apps.form.service.FormUtil;
@@ -24,6 +25,10 @@ import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import org.json.JSONArray;
+import com.kinnara.kecakplugins.jkanban.kanban.KanbanBoard;
+import com.kinnara.kecakplugins.jkanban.kanban.KanbanCard;
 
 public class KanbanUserViewMenu extends UserviewMenu {
 
@@ -105,6 +110,46 @@ public class KanbanUserViewMenu extends UserviewMenu {
             dataModel.put("editable", hasPermissionToEdit);
         }
 
+        DataListCollection<Map<String, Object>> rows = dataList.getRows();
+        String primaryKeyColumn = dataList.getBinder().getPrimaryKeyColumnName();
+        List<Map<String, Object>> validRows = rows.stream()
+                .filter(row -> row.get(primaryKeyColumn) != null)
+                .filter(row -> !row.get(primaryKeyColumn).toString().isEmpty())
+                .collect(Collectors.toList());
+
+        List<KanbanBoard> boardList = new ArrayList<>();
+        if (boards != null) {
+            for (Map<String, String> option : boards) {
+                String boardId = option.get("value");
+                KanbanBoard board = new KanbanBoard(
+                        boardId,
+                        option.get("label"),
+                        option.get("colour")
+                );
+
+                for (Map<String, Object> row : validRows) {
+                    String rowStatus = row.get(status) != null ? row.get(status).toString() : "";
+                    if (!boardId.equals(rowStatus)) {
+                        continue;
+                    }
+
+                    String recordId = row.get(primaryKeyColumn).toString();
+                    String rowTitle = row.get(label) != null ? row.get(label).toString() : "";
+                    
+                    Object rawCanMove = row.get(canMove);
+                    boolean isCanMove = !(rawCanMove != null && ("false".equalsIgnoreCase(rawCanMove.toString()) || Boolean.FALSE.equals(rawCanMove)));
+                    boolean canDrag = hasPermissionToEdit && isCanMove;
+
+                    KanbanCard card = new KanbanCard(
+                            recordId, rowTitle, rowStatus, "", "", "", "", canDrag, hasPermissionToEdit
+                    );
+                    board.addCard(card);
+                }
+                boardList.add(board);
+            }
+        }
+        dataModel.put("boardsData", boardsJson(boardList).toString());
+
         return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/KanbanUserViewMenu.ftl",
                 null);
     }
@@ -166,6 +211,38 @@ public class KanbanUserViewMenu extends UserviewMenu {
                 .map(formService::generateElementJson)
                 .map(Try.onFunction(JSONObject::new))
                 .orElseGet(JSONObject::new);
+    }
+
+    private JSONArray boardsJson(List<KanbanBoard> boards) {
+        JSONArray boardsArray = new JSONArray();
+        for (KanbanBoard board : boards) {
+            JSONObject boardObj = new JSONObject();
+            try {
+                boardObj.put("value", board.getValue());
+                boardObj.put("label", board.getLabel());
+                boardObj.put("colour", board.getColour());
+
+                JSONArray cardsArray = new JSONArray();
+                for (KanbanCard card : board.getCards()) {
+                    JSONObject cardObj = new JSONObject();
+                    try {
+                        cardObj.put("id", card.getRecordId());
+                        cardObj.put("title", card.getTitle());
+                        cardObj.put("status", card.getStatus());
+                        cardObj.put("canDrag", card.isCanDrag());
+                        cardObj.put("isEditable", card.isEditable());
+                    } catch (Exception e) {
+                        LogUtil.error(getClassName(), e, "Error building card JSON");
+                    }
+                    cardsArray.put(cardObj);
+                }
+                boardObj.put("cards", cardsArray);
+            } catch (Exception e) {
+                LogUtil.error(getClassName(), e, "Error building board JSON");
+            }
+            boardsArray.put(boardObj);
+        }
+        return boardsArray;
     }
 
     protected String generateNonce(AppDefinition appDefinition, String jsonForm) {

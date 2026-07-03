@@ -58,25 +58,11 @@
         "required": "true"
       },
       {
-        "name": "singleFormCheckBox",
-        "label": "Single Form",
-        "type": "checkbox",
-        "value": "",
-        "options": [
-          {
-            "value": "true",
-            "label": ""
-          }
-        ]
-      },
-      {
         "name": "formDefId",
         "label": "Form",
         "type" : "selectbox",
         "required" : "true",
-        "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/forms/options",
-        "control_field" : "singleFormCheckBox",
-        "control_value" :  "true"
+        "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/forms/options"
       },
       {
         "name": "options",

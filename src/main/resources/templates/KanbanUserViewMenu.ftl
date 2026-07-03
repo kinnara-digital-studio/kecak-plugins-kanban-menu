@@ -132,8 +132,9 @@
   <body>
 
     <input type='hidden' id='${elementUniqueKey}-jsonForm' value="${jsonForm!}" >
-    <div id="kanban-loading">Loading Kanban data...</div>
-    <div id="myKanban" style="display:none;"></div>
+    <script type="application/json" id="kanbanRawData">${boardsData! '[]'}</script>
+    <div id="kanban-loading" style="display:none;">Loading Kanban data...</div>
+    <div id="myKanban"></div>
 
     <script src="${request.contextPath}/plugin/${className}/node_modules/jkanban/dist/jkanban.js"></script>
     <script src="${request.contextPath}/js/jquery.min.js"></script>
@@ -141,23 +142,9 @@
       var labelField  = "${label!''}";
       var statusField = "${status!''}";
       var canMoveField = "${canMove!''}";
-      var apiUrl = "${request.contextPath}/web/json/data/app/${appId}/datalist/${dataListId}";
       var hasPermissionToEdit = ${editable?c};
-      var canMoveMap = {}; // { itemId: true/false } — diisi saat buildKanban
-
-      var boardsConfig = [
-        <#if boards?? && boards?has_content>
-          <#list boards as board>
-            { id: "${board.value!''}", title: "${board.label!''}", colour: "${board.colour!''}" }<#if board?has_next>,</#if>
-          </#list>
-        <#else>
-          { id: "todo",       title: "To Do",       colour: "#2196F3" },
-          { id: "inprogress", title: "In Progress", colour: "#FFC107" },
-          { id: "done",       title: "Done",        colour: "#4CAF50" }
-        </#if>
-      ];
-
       var kanbanBoard = null;
+      var canMoveMap = {}; // Diisi dari boardsData
 
       function popupForm(elementId, appId, appVersion, jsonForm, nonce, args, data, height, width) {
           let isEditable = ${editable?c};
@@ -345,33 +332,26 @@
         }
       }
 
-      function buildKanban(items) {
+      function buildKanban(boardsData) {
         canMoveMap = {};
-        items.forEach(function(record) {
-          var id = String(record["id"] || record["_id"] || record["$value"] || "");
-          if (!id) return;
-          var rawCanMove = record[canMoveField];
-          canMoveMap[id] = (rawCanMove === "false" || rawCanMove === false) ? false : true;
-        });
+        
+        var boards = boardsData.map(function(board) {
+            var items = board.cards.map(function(card) {
+                var cardId = card.id;
+                canMoveMap[cardId] = card.canDrag;
 
-        var boards = boardsConfig.map(function(boardCfg) {
-          var boardItems = [];
+                return {
+                    id: cardId,
+                    title: createItemHtml(card.title || '')
+                };
+            });
 
-          items.forEach(function(record) {
-            var itemStatus = record[statusField] || "";
-            if (itemStatus === boardCfg.id) {
-              boardItems.push({
-                id:    String(record["id"] || record["_id"] || record["$value"] || ""),
-                title: createItemHtml(String(record[labelField] || "(no label)"))
-              });
-            }
-          });
-
-          return {
-            id:    boardCfg.id,
-            title: boardCfg.title,
-            item:  boardItems
-          };
+            return {
+                id: board.value,
+                title: board.label,
+                colour: board.colour,
+                item: items
+            };
         });
 
         document.getElementById("myKanban").innerHTML = "";
@@ -445,12 +425,11 @@
           }
         });
 
-        boardsConfig.forEach(function(b) {
+        boardsData.forEach(function(b) {
           if (b.colour) {
-            var boardHeader = document.querySelector('.kanban-board[data-id="' + b.id + '"] .kanban-board-header');
+            var boardHeader = document.querySelector('.kanban-board[data-id="' + b.value + '"] .kanban-board-header');
             if (boardHeader) {
               boardHeader.style.backgroundColor = b.colour;
-              <#--  boardHeader.style.color = "#ffffff";  -->
             }
           }
         });
@@ -462,13 +441,7 @@
       function updateItemStatus(el, targetBoardId, sourceBoardId) {
         var itemId = el.getAttribute("data-eid");
 
-        var targetBoard = boardsConfig.find(function(b) { 
-            var bId = (b.id === null) ? "" : b.id;
-            return bId === targetBoardId; 
-        });
-        var targetBoardTitle = targetBoard ? targetBoard.title : targetBoardId;
-
-        console.log("Status changed", { id: itemId, from: sourceBoardId, to: targetBoardId, boardTitle: targetBoardTitle });
+        console.log("Status changed", { id: itemId, from: sourceBoardId, to: targetBoardId });
 
         var formData = {};
         formData[statusField]   = targetBoardId; 
@@ -493,12 +466,7 @@
             };
 
             kanbanBoard.removeElement(itemData.id);
-            var sourceBoardConfig = boardsConfig.find(function(b) { 
-                var bId = (b.id === null || b.id === "null") ? "" : b.id;
-                return bId === sourceBoardId; 
-            });
-            var revertBoardId = sourceBoardConfig ? sourceBoardConfig.id : (sourceBoardId === "" ? "null" : sourceBoardId);
-            
+            var revertBoardId = sourceBoardId === "" ? "null" : sourceBoardId;
             kanbanBoard.addElement(revertBoardId, itemData);
           }
         });
@@ -525,20 +493,8 @@
         
       }
 
-      jQuery.ajax({
-        url:      apiUrl,
-        method:   "GET",
-        dataType: "json",
-        success: function(response) {
-          var items = (response && response.data) ? response.data : [];
-          buildKanban(items);
-        },
-        error: function(xhr, status, error) {
-          document.getElementById("kanban-loading").textContent =
-            "Failed to load Kanban data: " + error;
-          console.error("Kanban AJAX error:", status, error, xhr.responseText);
-        }
-      });
+      var initialRawData = JSON.parse(document.getElementById('kanbanRawData').textContent || '[]');
+      buildKanban(initialRawData);
 
     </script>
 

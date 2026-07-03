@@ -96,7 +96,31 @@
     <script>
       var cardFormMap = {};
       var kanbanBoard = null;
-      var boardFormMap = {};
+      var globalForms = {
+          editable: {
+              formRaw: "{}",
+              nonce: "${nonceEditable!''}"
+          },
+          readOnly: {
+              formRaw: "{}",
+              nonce: "${nonceReadOnly!''}"
+          }
+      };
+
+      var parseForm = function(rawString) {
+          if (!rawString || rawString === "") return { formRaw: "{}", form: {} };
+          try {
+              var textarea = document.createElement('textarea');
+              textarea.innerHTML = rawString;
+              var decoded = textarea.value;
+              return { formRaw: decoded, form: JSON.parse(decoded) };
+          } catch(e) {
+              console.warn("Failed to parse form", e);
+              return { formRaw: "{}", form: {} };
+          }
+      };
+      globalForms.editable.formRaw = parseForm(`${formEditable!''}`).formRaw;
+      globalForms.readOnly.formRaw = parseForm(`${formReadOnly!''}`).formRaw;
 
       var initialRawData = JSON.parse(document.getElementById('kanbanRawData').textContent || '[]');
       initKanban(initialRawData);
@@ -104,33 +128,9 @@
       // Initialize Function
       function initKanban(boardsData) {
           cardFormMap = {};
-          boardFormMap = {};
-
-          var parseForm = function(rawString) {
-              if (!rawString || rawString === "") return { formRaw: "{}"};
-              try {
-                  var textarea = document.createElement('textarea');
-                  textarea.innerHTML = rawString;
-                  var decoded = textarea.value;
-                  return { formRaw: decoded};
-              } catch(e) {
-                  console.warn("Failed to parse form", e);
-                  return { formRaw: "{}"};
-              }
-          };
 
           var boardsConfig = boardsData.map(function(board) {
               var boardId = board.value;
-              boardFormMap[boardId] = {
-                  editable: {
-                      formRaw: parseForm(board.formEditable).formRaw,
-                      nonce: board.nonceEditable || ""
-                  },
-                  readOnly: {
-                      formRaw: parseForm(board.formReadOnly).formRaw,
-                      nonce: board.nonceReadOnly || ""
-                  }
-              };
 
               var sortedCards = board.cards.slice().sort(function(a, b) {
                   return (b.isEditable ? 1 : 0) - (a.isEditable ? 1 : 0);
@@ -281,15 +281,8 @@
 
       function openCardForm(cardId) {
           var cardData = cardFormMap[cardId] || {};
-          var boardId = cardData.status;
-          var boardForms = boardFormMap[boardId];
           
-          if (!boardForms) {
-              alert("No board configuration found for this card.");
-              return;
-          }
-          
-          var formConfig = cardData.isEditable ? boardForms.editable : boardForms.readOnly;
+          var formConfig = cardData.isEditable ? globalForms.editable : globalForms.readOnly;
           var formRaw = formConfig.formRaw || "{}";
           var nonce = formConfig.nonce || "";
 
