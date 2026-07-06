@@ -281,30 +281,30 @@
 			document.getElementById("myKanban").style.display = "block";
 		}
 
-		function createItemHtml(label, isEditable) {
-			var actionsHtml = '';
-			if (hasPermissionToEdit && isEditable) {
-				var dropdownHtml = '<a class="dropdown-item" onclick="confirmDelete(event, this)">Delete</a>';
-				if (datalistRowActions && datalistRowActions.length > 0) {
-					datalistRowActions.forEach(function(action) {
-						if (action.id.toLowerCase() !== 'edit' && action.id.toLowerCase() !== 'delete') {
-							dropdownHtml += '<a class="dropdown-item" onclick="triggerAction(event, \\'' + action.id + '\\', this)">' + action.label + '</a>';
-						}
-					});
-				}
-				actionsHtml = '<div class="item-actions">' +
-								'<button type="button" class="btn-dots" onclick="toggleDropdown(event, this)">&#8942;</button>' +
-								'<div class="dropdown-menu">' + dropdownHtml + '</div>' +
-							  '</div>';
-			}
+        function createItemHtml(label, isEditable) {
+            var actionsHtml = '';
+            if (hasPermissionToEdit && isEditable) {
+                var dropdownHtml = '<a class="dropdown-item" onclick="confirmDelete(event, this)">Delete</a>';
+                if (datalistRowActions && datalistRowActions.length > 0) {
+                    datalistRowActions.forEach(function(action) {
+                        if (action.id.toLowerCase() !== 'edit' && action.id.toLowerCase() !== 'delete') {
+                            dropdownHtml += '<a class="dropdown-item" onclick="triggerAction(event, \'' + action.id + '\', this)">' + action.label + '</a>';
+                        }
+                    });
+                }
+                actionsHtml = '<div class="item-actions">' +
+                                '<button type="button" class="btn-dots" onclick="toggleDropdown(event, this)">&#8942;</button>' +
+                                '<div class="dropdown-menu">' + dropdownHtml + '</div>' +
+                              '</div>';
+            }
 
-			var cardClass = (hasPermissionToEdit && isEditable) ? "kanban-item-editable" : "kanban-item-readonly";
-			var html = "<div class='card-title'>";
-			html += "  <span class='card-title-text'>" + label + "</span>";
-			html += "</div>";
+            var cardClass = (hasPermissionToEdit && isEditable) ? "kanban-item-editable" : "kanban-item-readonly";
+            var html = "<div class='card-title'>";
+            html += "  <span class='card-title-text'>" + label + "</span>";
+            html += "</div>";
 
-			return "<div class='" + cardClass + "'>" + html + actionsHtml + "</div>";
-		}
+            return "<div class='" + cardClass + "'>" + html + actionsHtml + "</div>";
+        }
 
 		function openCardForm(cardId) {
 			var data = { id: cardId };
