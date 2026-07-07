@@ -5,7 +5,7 @@
     <artifactId>kecak-plugins-kanban</artifactId>
     <packaging>bundle</packaging>
     <version>1.0-SNAPSHOT</version>
-    <name>kecak-plugins-jkanban</name>
+    <name>kecak-plugins-kanban</name>
     <url>http://www.kecak.org</url>
     <scm>
         <connection>scm:git:ssh://git@github.com:kinnara-digital-studio/kecak-plugins-jkanban.git</connection>
