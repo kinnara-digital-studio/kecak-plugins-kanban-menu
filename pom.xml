@@ -4,7 +4,7 @@
     <groupId>com.kinnara.kecakplugins.jkanban</groupId>
     <artifactId>kecak-plugins-kanban</artifactId>
     <packaging>bundle</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <version>3.0.0</version>
     <name>kecak-plugins-kanban</name>
     <url>http://www.kecak.org</url>
     <scm>
@@ -148,7 +148,7 @@
         <dependency>
             <groupId>org.joget</groupId>
             <artifactId>wflow-core</artifactId>
-            <version>[7.0-SNAPSHOT],[7.0,8.0)</version>
+            <version>7.0-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>javax.servlet</groupId>
