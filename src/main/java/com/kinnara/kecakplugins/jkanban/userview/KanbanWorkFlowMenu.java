@@ -10,7 +10,6 @@ import org.joget.apps.app.dao.FormDefinitionDao;
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.model.DatalistDefinition;
 import org.joget.apps.app.model.FormDefinition;
-import org.joget.apps.app.model.PackageActivityForm;
 import org.joget.apps.app.service.AppService;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.model.DataList;
@@ -222,17 +221,17 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
     private String getStatusField() {
         return getPropertyString("statusField");
     }
-
     private String getTitleField() {
         return getPropertyString("titleField");
     }
-
     private String getProcessDefId() {
         return getPropertyString("processDefId");
     }
-
     private String getDatalistId() {
         return getPropertyString("dataListId");
+    }
+    protected String getFormDefId() {
+        return getPropertyString("formDefId");
     }
 
     protected DataList getDataList(String dataListId) {
@@ -340,23 +339,7 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
                 1);
     }
 
-    private boolean isRequesterCanEdit(String status) {
-        Map<String, String>[] options = getPropertyGrid("options");
-
-        for (Map<String, String> option : options) {
-            if (status.equalsIgnoreCase(option.get("value"))) {
-                return "true".equalsIgnoreCase(option.get("canEdit"));
-            }
-        }
-        return false;
-    }
-
-    protected String getFormDefId() {
-        return getPropertyString("formDefId");
-    }
-
     protected boolean isRunningProcessOnly() {
         return "true".equalsIgnoreCase(getPropertyString("isRunningProcessOnly"));
     }
-
 }
