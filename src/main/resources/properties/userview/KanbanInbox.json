@@ -1,6 +1,6 @@
 [
   {
-    "title": "Kanban WorkFlow Menu Properties",
+    "title": "Kanban Inbox Menu Properties",
     "properties": [
       {
         "name": "id",
@@ -63,26 +63,6 @@
         "type" : "selectbox",
         "required" : "true",
         "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/forms/options"
-      },
-      {
-        "name": "options",
-        "label": "Board Options",
-        "type": "grid",
-        "required": "true",
-        "columns": [
-          {
-            "key": "value",
-            "label": "Value"
-          },
-          {
-            "key": "label",
-            "label": "Label"
-          },
-          {
-            "key": "colour",
-            "label": "Hex Colour Codes"
-          }
-        ]
       }
     ]
   }

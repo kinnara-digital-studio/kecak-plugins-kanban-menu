@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import com.kinnara.kecakplugins.jkanban.datalist.KanbanWorkflowDataListBinder;
+import com.kinnara.kecakplugins.jkanban.userview.KanbanInbox;
 import com.kinnara.kecakplugins.jkanban.userview.KanbanUserViewMenu;
 import com.kinnara.kecakplugins.jkanban.userview.KanbanWorkFlowMenu;
 import org.osgi.framework.BundleActivator;
@@ -23,6 +24,7 @@ public class Activator implements BundleActivator {
         // userview
         registrationList.add(context.registerService(KanbanUserViewMenu.class.getName(), new KanbanUserViewMenu(), null));
         registrationList.add(context.registerService(KanbanWorkFlowMenu.class.getName(), new KanbanWorkFlowMenu(), null));
+        registrationList.add(context.registerService(KanbanInbox.class.getName(), new KanbanInbox(), null));
 
         // datalist
         registrationList.add(context.registerService(KanbanWorkflowDataListBinder.class.getName(), new KanbanWorkflowDataListBinder(), null));
