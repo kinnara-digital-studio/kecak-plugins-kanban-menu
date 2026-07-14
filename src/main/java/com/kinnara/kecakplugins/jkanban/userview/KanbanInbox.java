@@ -3,10 +3,7 @@ package com.kinnara.kecakplugins.jkanban.userview;
 import com.kinnara.kecakplugins.jkanban.datalist.KanbanWorkflowDataListBinder;
 import com.kinnara.kecakplugins.jkanban.kanban.KanbanBoard;
 import com.kinnara.kecakplugins.jkanban.kanban.KanbanCard;
-import com.kinnara.kecakplugins.jkanban.kanban.graph.ColumnResult;
-import com.kinnara.kecakplugins.jkanban.kanban.graph.ProcessGraph;
-import com.kinnara.kecakplugins.jkanban.kanban.graph.ProcessNode;
-import com.kinnara.kecakplugins.jkanban.kanban.graph.ProcessTransition;
+import com.kinnara.kecakplugins.jkanban.kanban.graph.*;
 import com.kinnarastudio.commons.Try;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.joget.apps.app.dao.DatalistDefinitionDao;
@@ -173,6 +170,14 @@ public class KanbanInbox extends UserviewMenu {
                         displayAssigneeName = assigneeUser.getFirstName() + " " + assigneeUser.getLastName();
                     }
                     canDrag = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
+                } else {
+                    String statusValue = row.get(getStatusField()) != null ? row.get(getStatusField()).toString() : null;
+                    String matchedBoardId = graph.findEndNodeBoardByStatus(statusValue);
+                    if (matchedBoardId != null) {
+                        activityDefId = matchedBoardId;
+                        ProcessNode matchedNode = graph.getNodes().get(matchedBoardId);
+                        activityName = matchedNode != null ? matchedNode.getName() : matchedBoardId;
+                    }
                 }
             }
 
@@ -453,10 +458,10 @@ public class KanbanInbox extends UserviewMenu {
             NodeList activityNodes = targetProcessEl.getElementsByTagNameNS("*", "Activity");
             for (int i = 0; i < activityNodes.getLength(); i++) {
                 org.w3c.dom.Element actEl = (org.w3c.dom.Element) activityNodes.item(i);
-                graph.addNode(actEl.getAttribute("Id"), actEl.getAttribute("Name"), isWorkActivity(actEl));
+                graph.addNode(actEl.getAttribute("Id"), actEl.getAttribute("Name"), detectActivityType(actEl));
             }
 
-            // Parse transitions + kondisinya
+            // Parse transitions + condition
             NodeList transitionNodes = targetProcessEl.getElementsByTagNameNS("*", "Transition");
             for (int i = 0; i < transitionNodes.getLength(); i++) {
                 org.w3c.dom.Element transEl = (org.w3c.dom.Element) transitionNodes.item(i);
@@ -490,10 +495,10 @@ public class KanbanInbox extends UserviewMenu {
 
     private static final String XPDL_NS = "http://www.wfmc.org/2002/XPDL1.0";
 
-    private boolean isWorkActivity(org.w3c.dom.Element activityEl) {
+    private ActivityType detectActivityType(org.w3c.dom.Element activityEl) {
         NodeList routeNodes = activityEl.getElementsByTagNameNS(XPDL_NS, "Route");
         if (routeNodes.getLength() > 0) {
-            return false;
+            return ActivityType.ROUTE;
         }
 
         NodeList implNodes = activityEl.getElementsByTagNameNS(XPDL_NS, "Implementation");
@@ -502,15 +507,15 @@ public class KanbanInbox extends UserviewMenu {
 
             NodeList toolNodes = implEl.getElementsByTagNameNS(XPDL_NS, "Tool");
             if (toolNodes.getLength() > 0) {
-                return false;
+                return ActivityType.TOOL;
             }
 
             NodeList noNodes = implEl.getElementsByTagNameNS(XPDL_NS, "No");
             if (noNodes.getLength() > 0) {
-                return true;
+                return ActivityType.WORK_ACTIVITY;
             }
         }
-        return false;
+        return ActivityType.ROUTE; // default aman: anggap bukan work activity/tool
     }
 
     private void parseConditionsJson(String rawJson, ProcessTransition transition) {

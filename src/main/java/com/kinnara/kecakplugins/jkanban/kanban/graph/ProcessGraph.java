@@ -14,8 +14,8 @@ public class ProcessGraph {
     private List<ColumnResult> cachedColumns = null;
     private JSONObject cachedDragTargets = null;
 
-    public void addNode(String id, String name, boolean isWorkActivity) {
-        nodes.putIfAbsent(id, new ProcessNode(id, name, isWorkActivity));
+    public void addNode(String id, String name, ActivityType type) {
+        nodes.putIfAbsent(id, new ProcessNode(id, name, type));
     }
     public Map<String, ProcessNode> getNodes() { return nodes; }
 
@@ -37,6 +37,7 @@ public class ProcessGraph {
         return all;
     }
 
+    //find column Board
     public List<ColumnResult> computeColumnsBfs() {
         if (cachedColumns != null) {
             return cachedColumns;
@@ -93,12 +94,112 @@ public class ProcessGraph {
                 result.add(new ColumnResult(node.getId(), node.getName(), entry.getValue()));
             }
         }
-        result.sort(Comparator.comparingInt(ColumnResult::getLevel));
 
+        // tambahkan end node boards dari setiap work activity yang sudah ketemu
+        Set<String> addedEndNodes = new HashSet<>(); // cegah duplikat (kalau 2 activity nunjuk end node yang sama)
+        for (Map.Entry<String, Integer> entry : visitedLevel.entrySet()) {
+            ProcessNode node = nodes.get(entry.getKey());
+            if (node == null || !node.isWorkActivity()) continue;
+
+            int activityLevel = entry.getValue();
+            List<ProcessNode> endNodes = findEndNodeBoards(node.getId());
+
+            for (ProcessNode endNode : endNodes) {
+                if (addedEndNodes.contains(endNode.getId())) continue; // sudah ditambahkan dari activity lain
+                addedEndNodes.add(endNode.getId());
+                result.add(new ColumnResult(endNode.getId(), endNode.getName(), activityLevel + 1));
+            }
+        }
+        result.sort(Comparator.comparingInt(ColumnResult::getLevel));
         cachedColumns = result;
         return result;
     }
 
+    public List<ProcessNode> findEndNodeBoards(String fromActivityId) {
+        List<ProcessNode> results = new ArrayList<>();
+        Set<String> visited = new HashSet<>();
+        collectEndNodeBoards(fromActivityId, visited, results);
+        return results;
+    }
+    private void collectEndNodeBoards(String currentId, Set<String> visited, List<ProcessNode> results) {
+        if (visited.contains(currentId)) return;
+        visited.add(currentId);
+
+        ProcessNode currentNode = nodes.get(currentId);
+        if (currentNode == null) return;
+
+        for (ProcessTransition t : currentNode.getOutgoingTransitions()) {
+            ProcessNode targetNode = nodes.get(t.getTo());
+            if (targetNode == null) continue;
+
+            if (targetNode.isRoute()) {
+                // tembus route seperti biasa
+                collectEndNodeBoards(targetNode.getId(), visited, results);
+            } else if (targetNode.isTool()) {
+                // ini kandidat board -- cek apakah rantai setelahnya SEMUA tool sampai dead-end
+                if (isAllToolsUntilDeadEnd(targetNode.getId(), new HashSet<>())) {
+                    results.add(targetNode);
+                }
+                // kalau tidak valid, tidak ditambahkan -- TIDAK tembus lebih jauh dari sini
+                // (karena tool sendiri yang jadi kandidat, bukan tool di baliknya)
+            }
+            // kalau targetNode.isWorkActivity() -> bukan end node, tidak relevan
+            // (BFS kolom biasa yang urus activity ini, bukan method ini)
+        }
+    }
+    private boolean isAllToolsUntilDeadEnd(String nodeId, Set<String> chainVisited) {
+        if (chainVisited.contains(nodeId)) return false;
+        chainVisited.add(nodeId);
+
+        ProcessNode node = nodes.get(nodeId);
+        if (node == null) return false;
+
+        // Cek apakah tool
+        if (!node.isTool()) {
+            return false;
+        }
+        //cek dead-end
+        if (node.getOutgoingTransitions().isEmpty()) {
+            return true;
+        }
+
+        for (ProcessTransition t : node.getOutgoingTransitions()) {
+            ProcessNode nextNode = nodes.get(t.getTo());
+            if (nextNode == null) return false;
+            if (!isAllToolsUntilDeadEnd(nextNode.getId(), chainVisited)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public String findEndNodeBoardByStatus(String statusValue) {
+        String otherwiseFallback = null;
+
+        for (ProcessNode node : nodes.values()) {
+            if (!node.isTool()) continue;
+            if (!isAllToolsUntilDeadEnd(node.getId(), new HashSet<>())) continue;
+
+            for (ProcessNode possibleSource : nodes.values()) {
+                for (ProcessTransition t : possibleSource.getOutgoingTransitions()) {
+                    if (!t.getTo().equals(node.getId())) continue;
+
+                    if (t.isOtherwise()) {
+                        otherwiseFallback = node.getId(); // simpan sebagai fallback
+                    } else {
+                        for (ProcessTransition.TransitionCondition cond : t.getConditions()) {
+                            if (statusValue != null && statusValue.equals(cond.getValue())) {
+                                return node.getId(); // MATCH langsung, return
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return otherwiseFallback;
+    }
+
+    //drag and drop data validation
     public JSONObject computeDragTargetsJson(String fromActivityId) {
         JSONObject result = new JSONObject();
         try {
@@ -109,7 +210,6 @@ public class ProcessGraph {
         }
         return result;
     }
-
     public JSONObject getAllDragTargetsJson() {
         if (cachedDragTargets != null) {
             return cachedDragTargets;
@@ -128,7 +228,6 @@ public class ProcessGraph {
         cachedDragTargets = dragTargetsJson;
         return cachedDragTargets;
     }
-
     private void collectDragTargetsJson(String currentId,
                                         List<ProcessTransition.TransitionCondition> accumulatedConditions,
                                         Set<String> visited,
@@ -148,8 +247,13 @@ public class ProcessGraph {
 
             if (targetNode.isWorkActivity()) {
                 try {
-                    JSONObject targetInfo = getJsonObject(combined);
-                    result.put(targetNode.getId(), targetInfo);
+                    result.put(targetNode.getId(), getJsonObject(combined));
+                } catch (Exception e) {
+                    LogUtil.error(getClass().getName(), e, "Failed to build drag target JSON for " + targetNode.getId());
+                }
+            } else if (targetNode.isTool() && isAllToolsUntilDeadEnd(targetNode.getId(), new HashSet<>())) {
+                try {
+                    result.put(targetNode.getId(), getJsonObject(combined));
                 } catch (Exception e) {
                     LogUtil.error(getClass().getName(), e, "Failed to build drag target JSON for " + targetNode.getId());
                 }
@@ -158,7 +262,6 @@ public class ProcessGraph {
             }
         }
     }
-
     private static @NonNull JSONObject getJsonObject(List<ProcessTransition.TransitionCondition> combined) throws JSONException {
         JSONObject targetInfo = new JSONObject();
         JSONArray conditionsArr = new JSONArray();
