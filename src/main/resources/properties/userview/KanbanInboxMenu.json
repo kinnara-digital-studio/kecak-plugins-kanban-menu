@@ -63,6 +63,12 @@
         "type" : "selectbox",
         "required" : "true",
         "options_ajax" : "[CONTEXT_PATH]/web/json/console/app[APP_PATH]/forms/options"
+      },
+      {
+        "name": "colour",
+        "label": "Hex Code Colour",
+        "type": "textfield",
+        "required": "true"
       }
     ]
   }

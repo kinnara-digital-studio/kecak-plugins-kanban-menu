@@ -40,6 +40,7 @@ public class ProcessGraph {
     //find column Board
     public List<ColumnResult> computeColumnsBfs() {
         if (cachedColumns != null) {
+            //LogUtil.info(getClass().getName(), "langsung return cached column");
             return cachedColumns;
         }
 
@@ -212,6 +213,7 @@ public class ProcessGraph {
     }
     public JSONObject getAllDragTargetsJson() {
         if (cachedDragTargets != null) {
+            //LogUtil.info(getClass().getName(), "langsung return drag target");
             return cachedDragTargets;
         }
 

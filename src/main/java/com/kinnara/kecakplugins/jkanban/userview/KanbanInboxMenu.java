@@ -1,6 +1,7 @@
 package com.kinnara.kecakplugins.jkanban.userview;
 
 import com.kinnara.kecakplugins.jkanban.datalist.KanbanWorkflowDataListBinder;
+import com.kinnara.kecakplugins.jkanban.kanban.CacheUtil;
 import com.kinnara.kecakplugins.jkanban.model.KanbanBoard;
 import com.kinnara.kecakplugins.jkanban.model.KanbanCard;
 import com.kinnara.kecakplugins.jkanban.kanban.graph.*;
@@ -52,7 +53,6 @@ import java.util.stream.Collectors;
 
 public class KanbanInboxMenu extends UserviewMenu {
     private static final String LABEL = "Kanban Inbox Menu";
-    private static final Map<String, ProcessGraph> GRAPH_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
 
     @Override
     public String getCategory() {
@@ -107,19 +107,30 @@ public class KanbanInboxMenu extends UserviewMenu {
         String targetProcessId = getProcessDefId();
         ProcessGraph graph;
         if (processDefId != null) {
-            graph = GRAPH_CACHE.computeIfAbsent(processDefId, id -> {
-                String xpdlXmlContent = fetchXpdlContent(id);
-                return parseXpdlToGraph(xpdlXmlContent, targetProcessId);
-            });
+            String cacheKey = CacheUtil.getCacheKey(KanbanInboxMenu.class, "ProcessGraph", processDefId, targetProcessId);
+            ProcessGraph cachedGraph = (ProcessGraph) CacheUtil.getCached(cacheKey);
+
+            if (cachedGraph != null) {
+                //LogUtil.info(getClassName(), "CACHE HIT: Berhasil memuat grafik alur kerja dari memori cache untuk [" + cacheKey + "]");
+                graph = cachedGraph;
+            } else {
+                //LogUtil.info(getClassName(), "CACHE MISS: Grafik tidak ada di cache. Menjalankan XML parsing untuk [" + cacheKey + "]");
+                String xpdlXmlContent = fetchXpdlContent(processDefId);
+                graph = parseXpdlToGraph(xpdlXmlContent, targetProcessId);
+                CacheUtil.putCache(cacheKey, graph);
+            }
         } else {
             graph = new ProcessGraph();
         }
-        List<ColumnResult> columns = graph.computeColumnsBfs();
+        List<ColumnResult> columns = null;
+        if (graph != null) {
+            columns = graph.computeColumnsBfs();
+        }
 
         List<KanbanBoard> boards = new ArrayList<>();
         Map<String, KanbanBoard> boardLookup = new LinkedHashMap<>();
         for (ColumnResult col : columns) {
-            KanbanBoard board = new KanbanBoard(col.getActivityId(), col.getActivityName(), "#F707F7");
+            KanbanBoard board = new KanbanBoard(col.getActivityId(), col.getActivityName(), getColour().isEmpty() ? "#f0f0f0" : getColour());
             boards.add(board);
             boardLookup.put(col.getActivityId(), board);
         }
@@ -165,7 +176,6 @@ public class KanbanInboxMenu extends UserviewMenu {
                         assigneeUser = directoryManager.getUserByUsername(currentAssigneeUserName);
                         userCache.put(currentAssigneeUserName, assigneeUser);
                     }
-                    
                     if (assigneeUser != null) {
                         displayAssigneeName = assigneeUser.getFirstName() + " " + assigneeUser.getLastName();
                     }
@@ -204,7 +214,6 @@ public class KanbanInboxMenu extends UserviewMenu {
             throw new RuntimeException(e);
         }
         LogUtil.info(getClassName(), "dragTargets: " + dragTargetsDebug);
-
 
         Map<String, Object> dataModel = new HashMap<>();
         dataModel.put("boards", boardsJson(boards).toString());
@@ -284,6 +293,9 @@ public class KanbanInboxMenu extends UserviewMenu {
     }
     protected String getFormDefId() {
         return getPropertyString("formDefId");
+    }
+    protected String getColour() {
+        return getPropertyString("colour");
     }
 
     protected DataList getDataList(String dataListId) {
