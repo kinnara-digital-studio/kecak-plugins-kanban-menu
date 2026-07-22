@@ -78,7 +78,6 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
                 .filter(row -> !row.get(primaryKeyColumn).toString().isEmpty())
                 .collect(Collectors.toList());
 
-        List<KanbanBoard> boards = new ArrayList<>();
         String globalFormDefId = getPropertyString("formDefId");
 
         String formEditableStr = "";
@@ -96,65 +95,80 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
             formReadOnlyStr = StringEscapeUtils.escapeHtml4(formReadOnly.toString());
         }
 
+        List<KanbanBoard> boards = new ArrayList<>();
+        Map<String, KanbanBoard> boardLookup = new LinkedHashMap<>();
         Map<String, String>[] options = getPropertyGrid("options");
-        if (options != null) {
+        if (options.length >= 1) {
             for (Map<String, String> option : options) {
                 String boardId = option.get("value");
-
                 KanbanBoard board = new KanbanBoard(
                         boardId,
                         option.get("label"),
                         option.get("colour")
                 );
-
-                for (Map<String, Object> row : validRows) {
-                    String status = row.get(getStatusField()) != null ? row.get(getStatusField()).toString() : "";
-
-                    if (!boardId.equals(status)) {
-                        continue;
-                    }
-
-                    String recordId = row.get("id").toString();
-                    String title = row.get(getTitleField()) != null ? row.get(getTitleField()).toString() : "";
-                    String requesterName = row.get("createdBy") != null ? row.get("createdBy").toString() : "";
-
-                    User requesterUser = directoryManager.getUserByUsername(requesterName);
-                    String displayRequesterName = requesterUser != null
-                            ? requesterUser.getFirstName() + " " + requesterUser.getLastName()
-                            : requesterName;
-
-                    String activityId = "";
-                    String activityName = ResourceBundleUtil.getMessage("jkanban.noActivityYet");
-                    String currentAssigneeUserName = "";
-                    String displayAssigneeName = ResourceBundleUtil.getMessage("jkanban.noAssigneeYet");
-                    boolean canDrag = false;
-
-                    if (processDefId != null) {
-                        WorkflowAssignment assignment = workflowManager.getAssignmentByRecordId(recordId, processDefId, null, null);
-
-                        if (assignment != null) {
-                            activityId = assignment.getActivityId();
-                            activityName = assignment.getActivityName();
-                            currentAssigneeUserName = assignment.getAssigneeName();
-
-                            User assigneeUser = directoryManager.getUserByUsername(currentAssigneeUserName);
-                            if (assigneeUser != null) {
-                                displayAssigneeName = assigneeUser.getFirstName() + " " + assigneeUser.getLastName();
-                            }
-                            canDrag = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
-                        }
-                    }
-
-                    boolean canEdit = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
-
-                    KanbanCard card = new KanbanCard(
-                            recordId, title, status, displayRequesterName,
-                            displayAssigneeName, activityId, activityName, canDrag, canEdit
-                    );
-                    board.addCard(card);
-                }
                 boards.add(board);
+                boardLookup.put(boardId, board);
             }
+        }
+        Map<String, User> userCache = new HashMap<>();
+        for (Map<String, Object> row : validRows) {
+            String status = row.get(getStatusField()) != null ? row.get(getStatusField()).toString() : "";
+
+            KanbanBoard targetBoard = boardLookup.get(status);
+            if (targetBoard == null) {
+                continue;
+            }
+
+            String recordId = row.get("id").toString();
+            String title = row.get(getTitleField()) != null ? row.get(getTitleField()).toString() : "";
+            String requesterName = row.get("createdBy") != null ? row.get("createdBy").toString() : "";
+
+            User requesterUser;
+            if (userCache.containsKey(requesterName)) {
+                requesterUser = userCache.get(requesterName);
+            } else {
+                requesterUser = directoryManager.getUserByUsername(requesterName);
+                userCache.put(requesterName, requesterUser);
+            }
+            String displayRequesterName = requesterUser != null
+                    ? requesterUser.getFirstName() + " " + requesterUser.getLastName()
+                    : requesterName;
+
+            String activityId = "";
+            String activityName = ResourceBundleUtil.getMessage("jkanban.noActivityYet");
+            String currentAssigneeUserName = "";
+            String displayAssigneeName = ResourceBundleUtil.getMessage("jkanban.noAssigneeYet");
+            boolean canDrag = false;
+
+            if (processDefId != null) {
+                WorkflowAssignment assignment = workflowManager.getAssignmentByRecordId(recordId, processDefId, null, null);
+
+                if (assignment != null) {
+                    activityId = assignment.getActivityId();
+                    activityName = assignment.getActivityName();
+                    currentAssigneeUserName = assignment.getAssigneeName();
+
+                    User assigneeUser;
+                    if (userCache.containsKey(currentAssigneeUserName)) {
+                        assigneeUser = userCache.get(currentAssigneeUserName);
+                    } else {
+                        assigneeUser = directoryManager.getUserByUsername(currentAssigneeUserName);
+                        userCache.put(currentAssigneeUserName, assigneeUser);
+                    }
+                    if (assigneeUser != null) {
+                        displayAssigneeName = assigneeUser.getFirstName() + " " + assigneeUser.getLastName();
+                    }
+                    canDrag = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
+                }
+            }
+
+            boolean canEdit = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
+
+            KanbanCard card = new KanbanCard(
+                    recordId, title, status, displayRequesterName,
+                    displayAssigneeName, activityId, activityName, canDrag, canEdit
+            );
+            targetBoard.addCard(card);
         }
 
         Map<String, Object> dataModel = new HashMap<>();

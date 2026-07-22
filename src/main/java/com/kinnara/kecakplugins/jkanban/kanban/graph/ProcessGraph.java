@@ -96,7 +96,7 @@ public class ProcessGraph {
         }
 
         // tambahkan end node boards dari setiap work activity yang sudah ketemu
-        Set<String> addedEndNodes = new HashSet<>(); // cegah duplikat (kalau 2 activity nunjuk end node yang sama)
+        Set<String> addedEndNodes = new HashSet<>(); // cegah duplikat kalau 2 activity nunjuk end node yang sama
         for (Map.Entry<String, Integer> entry : visitedLevel.entrySet()) {
             ProcessNode node = nodes.get(entry.getKey());
             if (node == null || !node.isWorkActivity()) continue;
@@ -136,11 +136,11 @@ public class ProcessGraph {
                 // tembus route seperti biasa
                 collectEndNodeBoards(targetNode.getId(), visited, results);
             } else if (targetNode.isTool()) {
-                // ini kandidat board -- cek apakah rantai setelahnya SEMUA tool sampai dead-end
+                // ini kandidat board -- cek apakah rantai setelahnya tool sampai dead-end
                 if (isAllToolsUntilDeadEnd(targetNode.getId(), new HashSet<>())) {
                     results.add(targetNode);
                 }
-                // kalau tidak valid, tidak ditambahkan -- TIDAK tembus lebih jauh dari sini
+                // kalau tidak valid, tidak ditambahkan -- tidak tembus lebih jauh dari sini
                 // (karena tool sendiri yang jadi kandidat, bukan tool di baliknya)
             }
             // kalau targetNode.isWorkActivity() -> bukan end node, tidak relevan

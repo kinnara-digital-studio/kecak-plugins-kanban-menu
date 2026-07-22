@@ -168,7 +168,12 @@
             <version>4.1.1</version>
         </dependency>
         <!-- Change plugin specific dependencies here -->
-        
         <!-- End change plugin specific dependencies here -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <version>3.0-alpha-1</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 </project>
