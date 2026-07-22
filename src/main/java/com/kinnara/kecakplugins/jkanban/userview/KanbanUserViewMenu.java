@@ -1,5 +1,7 @@
 package com.kinnara.kecakplugins.jkanban.userview;
 
+import com.kinnara.kecakplugins.jkanban.model.KanbanBoard;
+import com.kinnara.kecakplugins.jkanban.model.KanbanCard;
 import com.kinnarastudio.commons.Try;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.joget.apps.app.dao.DatalistDefinitionDao;
@@ -21,14 +23,12 @@ import org.joget.commons.util.SecurityUtil;
 import org.joget.directory.model.User;
 import org.joget.plugin.base.PluginManager;
 import org.joget.workflow.model.service.WorkflowUserManager;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import org.json.JSONArray;
-import com.kinnara.kecakplugins.jkanban.kanban.KanbanBoard;
-import com.kinnara.kecakplugins.jkanban.kanban.KanbanCard;
 
 public class KanbanUserViewMenu extends UserviewMenu {
 
@@ -93,10 +93,11 @@ public class KanbanUserViewMenu extends UserviewMenu {
                 .getBean("workflowUserManager");
         final User currentUser = workflowUserManager.getCurrentUser();
 
-        final boolean hasPermissionToEdit = optPermission().map(permission -> {
-            permission.setCurrentUser(currentUser);
-            return permission.isAuthorize();
-        }).orElse(false);
+        final boolean hasPermissionToEdit = optPermission()
+                .map(permission -> {
+                    permission.setCurrentUser(currentUser);
+                    return permission.isAuthorize();
+                }).orElse(false);
 
         if (formId.isEmpty()) {
             dataModel.put("editable", false);
@@ -135,7 +136,7 @@ public class KanbanUserViewMenu extends UserviewMenu {
 
                     String recordId = row.get(primaryKeyColumn).toString();
                     String rowTitle = row.get(label) != null ? row.get(label).toString() : "";
-                    
+
                     Object rawCanMove = row.get(canMove);
                     boolean isCanMove = !(rawCanMove != null && ("false".equalsIgnoreCase(rawCanMove.toString()) || Boolean.FALSE.equals(rawCanMove)));
                     boolean canDrag = hasPermissionToEdit && isCanMove;
@@ -247,7 +248,7 @@ public class KanbanUserViewMenu extends UserviewMenu {
 
     protected String generateNonce(AppDefinition appDefinition, String jsonForm) {
         return SecurityUtil.generateNonce(
-                new String[] { "EmbedForm", appDefinition.getAppId(), appDefinition.getVersion().toString(), jsonForm },
+                new String[]{"EmbedForm", appDefinition.getAppId(), appDefinition.getVersion().toString(), jsonForm},
                 1);
     }
 

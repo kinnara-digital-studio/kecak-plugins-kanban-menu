@@ -1,8 +1,8 @@
 package com.kinnara.kecakplugins.jkanban.userview;
 
 import com.kinnara.kecakplugins.jkanban.datalist.KanbanWorkflowDataListBinder;
-import com.kinnara.kecakplugins.jkanban.kanban.KanbanBoard;
-import com.kinnara.kecakplugins.jkanban.kanban.KanbanCard;
+import com.kinnara.kecakplugins.jkanban.model.KanbanBoard;
+import com.kinnara.kecakplugins.jkanban.model.KanbanCard;
 import com.kinnarastudio.commons.Try;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.joget.apps.app.dao.DatalistDefinitionDao;
@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 
 public class KanbanWorkFlowMenu extends UserviewMenu {
 
-    private static final String LABEL = "Kanban WorkFlow Menu";
+    private static final String LABEL = "Kanban Workflow Menu";
 
     @Override
     public String getCategory() {

@@ -1,8 +1,8 @@
 package com.kinnara.kecakplugins.jkanban.userview;
 
 import com.kinnara.kecakplugins.jkanban.datalist.KanbanWorkflowDataListBinder;
-import com.kinnara.kecakplugins.jkanban.kanban.KanbanBoard;
-import com.kinnara.kecakplugins.jkanban.kanban.KanbanCard;
+import com.kinnara.kecakplugins.jkanban.model.KanbanBoard;
+import com.kinnara.kecakplugins.jkanban.model.KanbanCard;
 import com.kinnara.kecakplugins.jkanban.kanban.graph.*;
 import com.kinnarastudio.commons.Try;
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -50,7 +50,7 @@ import java.sql.ResultSet;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class KanbanInbox extends UserviewMenu {
+public class KanbanInboxMenu extends UserviewMenu {
     private static final String LABEL = "Kanban Inbox Menu";
     private static final Map<String, ProcessGraph> GRAPH_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -220,7 +220,7 @@ public class KanbanInbox extends UserviewMenu {
         dataModel.put("xpdlDebug", graphDebug + "\n\n=== DRAG TARGETS ===\n" + dragTargetsDebug);
         dataModel.put("dragTargets", dragTargetsJson.toString());
 
-        return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/KanbanInbox.ftl", null);
+        return pluginManager.getPluginFreeMarkerTemplate(dataModel, getClassName(), "/templates/KanbanInboxMenu.ftl", null);
     }
 
 
@@ -267,7 +267,7 @@ public class KanbanInbox extends UserviewMenu {
         Object[] args = new Object[]{
                 InboxMenu.class.getName()
         };
-        return AppUtil.readPluginResource(getClassName(), "/properties/userview/KanbanInbox.json", args, true, "");
+        return AppUtil.readPluginResource(getClassName(), "/properties/userview/KanbanInboxMenu.json", args, true, "");
     }
 
     private String getStatusField() {
