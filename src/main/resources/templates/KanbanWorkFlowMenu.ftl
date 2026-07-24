@@ -324,23 +324,34 @@
 				dataType: "json",
 				success: function(resp) {
 					var isError = resp.validation_error || resp.status === "error" || resp.error || (resp.errors && Object.keys(resp.errors).length > 0);
-					if (isError) {
-						var errors = "Error occurred";
-						if (resp.validation_error) {
-							errors = Object.values(resp.validation_error).join("\n");
-						} else if (resp.errors && typeof resp.errors === 'object') {
-							errors = Object.values(resp.errors).join("\n");
-						} else if (typeof resp.error === 'string') {
-							errors = resp.error;
-						} else if (resp.message) {
-							errors = resp.message;
-						}
+                    if (isError) {
+                        //console.error("Move Card Failed. Full error response:", resp);
+                        var errors = "Error occurred";
 
-						revertCard(cardId, el, sourceBoardId);
-						alert(errors);
-						el.style.opacity = '1';
-						return;
-					}
+                        if (resp.validation_error) {
+                            var errList = [];
+                            for (var key in resp.validation_error) {
+                                errList.push("Field [" + key + "]: " + resp.validation_error[key]);
+                            }
+                            errors = errList.join("\n");
+                        } else if (resp.errors && typeof resp.errors === 'object') {
+                            var errList = [];
+                            for (var key in resp.errors) {
+                                errList.push("Field [" + key + "]: " + resp.errors[key]);
+                            }
+                            errors = errList.join("\n");
+                        } else if (typeof resp.error === 'string') {
+                            errors = resp.error;
+                        } else if (resp.message) {
+                            errors = resp.message;
+                        }
+
+                        revertCard(cardId, el, sourceBoardId);
+                        alert(errors);
+                        //console.log(errors);
+                        el.style.opacity = '1';
+                        return;
+                    }
 					setTimeout(refreshKanbanBoard, 1000);
 				},
 				error: function(xhr) {
