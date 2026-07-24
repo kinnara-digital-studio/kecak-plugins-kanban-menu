@@ -145,7 +145,8 @@
 						status: card.status || boardId,
 						isEditable: card.isEditable || false,
 						activityId: card.activityId || "",
-						canDrag: card.canDrag || false
+						canDrag: card.canDrag || false,
+						formDefId: card.formDefId || ""
 					};
 
 					var iconHtml = card.isEditable 
@@ -303,6 +304,7 @@
 		function moveCard(cardId, targetBoardId, sourceBoardId, el) {
 			var entry = cardFormMap[cardId] || {};
 			var activityId = entry.activityId || "";
+			var formDefId = entry.formDefId || "";
 
 			if (!entry.canDrag || !activityId) {
 				alert("This Card Cannot Move, No Assignee or No Activity yet");
@@ -311,44 +313,76 @@
 			}
 
 			var submitUrl = "${request.contextPath}/web/json/data/assignment/" + activityId;
+            var loadUrl = "${request.contextPath}/web/json/data/app/${appId}/form/" + formDefId + "/" + cardId;
 
 			el.style.opacity = '0.5';
 
-			jQuery.ajax({
-				url: submitUrl,
-				method: "POST",
-				contentType: "application/json",
-				data: JSON.stringify({
-					"${statusField!'status'}": targetBoardId
-				}),
-				dataType: "json",
-				success: function(resp) {
-					var isError = resp.validation_error || resp.status === "error" || resp.error || (resp.errors && Object.keys(resp.errors).length > 0);
-					if (isError) {
-						var errors = "Error occurred";
-						if (resp.validation_error) {
-							errors = Object.values(resp.validation_error).join("\n");
-						} else if (resp.errors && typeof resp.errors === 'object') {
-							errors = Object.values(resp.errors).join("\n");
-						} else if (typeof resp.error === 'string') {
-							errors = resp.error;
-						} else if (resp.message) {
-							errors = resp.message;
-						}
+            jQuery.ajax({
+                url: loadUrl,
+                method: "GET",
+                dataType: "json",
+                success: function(resp) {
+                    var existingData = resp.data || resp;
 
-						revertCard(cardId, el, sourceBoardId);
-						alert(errors);
-						el.style.opacity = '1';
-						return;
-					}
-					setTimeout(refreshKanbanBoard, 1000);
-				},
-				error: function(xhr) {
-					console.error("Failed to move card", xhr);
-					revertCard(cardId, el, sourceBoardId);
-					el.style.opacity = '1';
-				}
-			});
+                    var cleanData = {};
+                    for (var key in existingData) {
+                        if (existingData.hasOwnProperty(key) && !key.startsWith("_")) {
+                            cleanData[key] = existingData[key];
+                        }
+                    }
+                    cleanData["${statusField!'status'}"] = targetBoardId;
+                    //console.log("cleanData: ",cleanData);
+
+                    jQuery.ajax({
+                        url: submitUrl,
+                        method: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify(cleanData),
+                        dataType: "json",
+                        success: function(resp) {
+                            var isError = resp.validation_error || resp.status === "error" || resp.error || (resp.errors && Object.keys(resp.errors).length > 0);
+                            if (isError) {
+                                //console.error("Move Card Failed. Full error response:", resp);
+                                var errors = "Error occurred";
+
+                                if (resp.validation_error) {
+                                    var errList = [];
+                                    for (var key in resp.validation_error) {
+                                        errList.push("Field [" + key + "]: " + resp.validation_error[key]);
+                                    }
+                                    errors = errList.join("\n");
+                                } else if (resp.errors && typeof resp.errors === 'object') {
+                                    var errList = [];
+                                    for (var key in resp.errors) {
+                                        errList.push("Field [" + key + "]: " + resp.errors[key]);
+                                    }
+                                    errors = errList.join("\n");
+                                } else if (typeof resp.error === 'string') {
+                                    errors = resp.error;
+                                } else if (resp.message) {
+                                    errors = resp.message;
+                                }
+
+                                revertCard(cardId, el, sourceBoardId);
+                                alert(errors);
+                                console.log(errors);
+                                el.style.opacity = '1';
+                                return;
+                            }
+                            setTimeout(refreshKanbanBoard, 1000);
+                        },
+                        error: function(xhr) {
+                            console.error("Failed to move card", xhr);
+                            revertCard(cardId, el, sourceBoardId);
+                            el.style.opacity = '1';
+                        }
+                    });
+                },
+                error: function() {
+                    revertCard(cardId, el, sourceBoardId);
+                    el.style.opacity = '1';
+                }
+            });
 		}
 
 		function revertCard(cardId, el, sourceBoardId) {

@@ -10,6 +10,7 @@ import org.joget.apps.app.dao.FormDefinitionDao;
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.model.DatalistDefinition;
 import org.joget.apps.app.model.FormDefinition;
+import org.joget.apps.app.model.PackageActivityForm;
 import org.joget.apps.app.service.AppService;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.model.DataList;
@@ -111,6 +112,7 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
             }
         }
         Map<String, User> userCache = new HashMap<>();
+        Map<String, String> formDefIdCache = new HashMap<>();
         for (Map<String, Object> row : validRows) {
             String status = row.get(getStatusField()) != null ? row.get(getStatusField()).toString() : "";
 
@@ -138,7 +140,9 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
             String activityName = ResourceBundleUtil.getMessage("jkanban.noActivityYet");
             String currentAssigneeUserName = "";
             String displayAssigneeName = ResourceBundleUtil.getMessage("jkanban.noAssigneeYet");
+            String activityDefId = "";
             boolean canDrag = false;
+            String formDefId = "";
 
             if (processDefId != null) {
                 WorkflowAssignment assignment = workflowManager.getAssignmentByRecordId(recordId, processDefId, null, null);
@@ -147,6 +151,15 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
                     activityId = assignment.getActivityId();
                     activityName = assignment.getActivityName();
                     currentAssigneeUserName = assignment.getAssigneeName();
+                    activityDefId = assignment.getActivityDefId();
+                    if (formDefIdCache.containsKey(activityDefId)) {
+                        formDefId = formDefIdCache.get(activityDefId);
+                    } else {
+                        PackageActivityForm paf = appService.retrieveMappedForm(
+                                appId, appVersion, processDefId, activityDefId);
+                        formDefId = paf != null ? paf.getFormId() : globalFormDefId;
+                        formDefIdCache.put(activityDefId, formDefId);
+                    }
 
                     User assigneeUser;
                     if (userCache.containsKey(currentAssigneeUserName)) {
@@ -166,7 +179,7 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
 
             KanbanCard card = new KanbanCard(
                     recordId, title, status, displayRequesterName,
-                    displayAssigneeName, activityId, activityName, canDrag, canEdit
+                    displayAssigneeName, activityId, activityName, canDrag, canEdit, formDefId
             );
             targetBoard.addCard(card);
         }
@@ -331,6 +344,7 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
                         cardObj.put("activityName", card.getActivityName());
                         cardObj.put("canDrag", card.isCanDrag());
                         cardObj.put("isEditable", card.isEditable());
+                        cardObj.put("formDefId", card.getFormDefId());
                     } catch (Exception e) {
                         LogUtil.error(getClassName(), e, "Error building card JSON");
                     }
