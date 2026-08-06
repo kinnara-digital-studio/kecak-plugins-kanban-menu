@@ -27,6 +27,7 @@ import org.joget.commons.util.SecurityUtil;
 import org.joget.directory.model.User;
 import org.joget.directory.model.service.DirectoryManager;
 import org.joget.plugin.base.PluginManager;
+import org.joget.workflow.model.WorkflowActivity;
 import org.joget.workflow.model.WorkflowAssignment;
 import org.joget.workflow.model.WorkflowProcess;
 import org.joget.workflow.model.service.WorkflowManager;
@@ -136,33 +137,44 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
 
             String activityId = "";
             String activityName = ResourceBundleUtil.getMessage("jkanban.noActivityYet");
-            String currentAssigneeUserName = "";
             String displayAssigneeName = ResourceBundleUtil.getMessage("jkanban.noAssigneeYet");
             boolean canDrag = false;
+            boolean canEdit = false;
 
             if (processDefId != null) {
                 WorkflowAssignment assignment = workflowManager.getAssignmentByRecordId(recordId, processDefId, null, null);
-
                 if (assignment != null) {
                     activityId = assignment.getActivityId();
                     activityName = assignment.getActivityName();
-                    currentAssigneeUserName = assignment.getAssigneeName();
 
-                    User assigneeUser;
-                    if (userCache.containsKey(currentAssigneeUserName)) {
-                        assigneeUser = userCache.get(currentAssigneeUserName);
-                    } else {
-                        assigneeUser = directoryManager.getUserByUsername(currentAssigneeUserName);
-                        userCache.put(currentAssigneeUserName, assigneeUser);
+                    WorkflowActivity runningActivity = workflowManager.getRunningActivityInfo(activityId);
+                    if (runningActivity != null) {
+                        String[] assignees = runningActivity.getAssignmentUsers();
+                        if (assignees != null && assignees.length > 0) {
+                            List<String> displayNames = new ArrayList<>();
+                            for (String username : assignees) {
+                                if (username.equals(currentUser.getUsername())) {
+                                    canDrag = true;
+                                    canEdit = true;
+                                }
+                                User assigneeUser;
+                                if (userCache.containsKey(username)) {
+                                    assigneeUser = userCache.get(username);
+                                } else {
+                                    assigneeUser = directoryManager.getUserByUsername(username);
+                                    userCache.put(username, assigneeUser);
+                                }
+                                if (assigneeUser != null) {
+                                    displayNames.add(assigneeUser.getFirstName() + " " + assigneeUser.getLastName());
+                                } else {
+                                    displayNames.add(username);
+                                }
+                            }
+                            displayAssigneeName = String.join(", ", displayNames);
+                        }
                     }
-                    if (assigneeUser != null) {
-                        displayAssigneeName = assigneeUser.getFirstName() + " " + assigneeUser.getLastName();
-                    }
-                    canDrag = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
                 }
             }
-
-            boolean canEdit = Objects.equals(currentAssigneeUserName, currentUser.getUsername());
 
             KanbanCard card = new KanbanCard(
                     recordId, title, status, displayRequesterName,
