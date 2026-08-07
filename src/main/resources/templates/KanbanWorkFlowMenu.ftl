@@ -135,7 +135,7 @@
 				var boardId = board.value;
 
 				var sortedCards = board.cards.slice().sort(function(a, b) {
-					return (b.isEditable ? 1 : 0) - (a.isEditable ? 1 : 0);
+					return (b.canDrag ? 1 : 0) - (a.canDrag ? 1 : 0);
 				});
 
 				var items = sortedCards.map(function(card, index) {
@@ -148,11 +148,11 @@
 						canDrag: card.canDrag || false
 					};
 
-					var iconHtml = card.isEditable 
+					var iconHtml = card.canDrag
 						  ? "<i class='fas fa-pencil-alt card-icon' title='Edit'></i>" 
 						  : "<i class='fas fa-eye card-icon' title='View'></i>";
 
-					var cardClass = card.isEditable ? "kanban-item-editable" : "kanban-item-readonly";
+					var cardClass = card.canDrag ? "kanban-item-editable" : "kanban-item-readonly";
 
 					var html = "";
 					html += "<div class='card-title'>";

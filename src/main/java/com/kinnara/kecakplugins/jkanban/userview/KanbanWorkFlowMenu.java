@@ -139,7 +139,7 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
             String activityName = ResourceBundleUtil.getMessage("jkanban.noActivityYet");
             String displayAssigneeName = ResourceBundleUtil.getMessage("jkanban.noAssigneeYet");
             boolean canDrag = false;
-            boolean canEdit = false;
+            boolean canEdit = true;
 
             if (processDefId != null) {
                 WorkflowAssignment assignment = workflowManager.getAssignmentByRecordId(recordId, processDefId, null, null);
