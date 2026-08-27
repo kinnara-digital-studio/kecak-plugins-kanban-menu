@@ -300,67 +300,65 @@
 			popupForm(cardId, appId, appVersion, formRaw, nonce, args, data, height, width, cardData.isEditable);
 		}
 
-		function moveCard(cardId, targetBoardId, sourceBoardId, el) {
-			var entry = cardFormMap[cardId] || {};
-			var activityId = entry.activityId || "";
+        function moveCard(cardId, targetBoardId, sourceBoardId, el) {
+            var entry = cardFormMap[cardId] || {};
+            var activityId = entry.activityId || "";
 
-			if (!entry.canDrag || !activityId) {
-				alert("This Card Cannot Move, No Assignee or No Activity yet");
-				revertCard(cardId, el, sourceBoardId);
-				return;
-			}
+            if (!entry.canDrag || !activityId) {
+               alert("This Card Cannot Move, No Assignee or No Activity yet");
+               revertCard(cardId, el, sourceBoardId);
+               return;
+            }
 
-			var submitUrl = "${request.contextPath}/web/json/data/assignment/" + activityId;
+            var submitUrl = "${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service"
+                + "?action=moveCard"
+                + "&activityId=" + encodeURIComponent(activityId)
+                + "&status=" + encodeURIComponent(targetBoardId)
+                + "&statusField=" + encodeURIComponent("${statusField!'status'}");
 
-			el.style.opacity = '0.5';
+            el.style.opacity = '0.5';
 
-			jQuery.ajax({
-				url: submitUrl,
-				method: "POST",
-				contentType: "application/json",
-				data: JSON.stringify({
-					"${statusField!'status'}": targetBoardId
-				}),
-				dataType: "json",
-				success: function(resp) {
-					var isError = resp.validation_error || resp.status === "error" || resp.error || (resp.errors && Object.keys(resp.errors).length > 0);
-                    if (isError) {
-                        //console.error("Move Card Failed. Full error response:", resp);
-                        var errors = "Error occurred";
+            jQuery.ajax({
+               url: submitUrl,
+               method: "POST",
+               dataType: "json",
+               success: function(resp) {
+                  var isError = resp.validation_error || resp.status === "error" || resp.error || (resp.errors && Object.keys(resp.errors).length > 0);
+                      if (isError) {
+                          var errors = "Error occurred";
 
-                        if (resp.validation_error) {
-                            var errList = [];
-                            for (var key in resp.validation_error) {
-                                errList.push("Field [" + key + "]: " + resp.validation_error[key]);
-                            }
-                            errors = errList.join("\n");
-                        } else if (resp.errors && typeof resp.errors === 'object') {
-                            var errList = [];
-                            for (var key in resp.errors) {
-                                errList.push("Field [" + key + "]: " + resp.errors[key]);
-                            }
-                            errors = errList.join("\n");
-                        } else if (typeof resp.error === 'string') {
-                            errors = resp.error;
-                        } else if (resp.message) {
-                            errors = resp.message;
-                        }
+                          if (resp.validation_error) {
+                              var errList = [];
+                              for (var key in resp.validation_error) {
+                                  errList.push("Field [" + key + "]: " + resp.validation_error[key]);
+                              }
+                              errors = errList.join("\n");
+                          } else if (resp.errors && typeof resp.errors === 'object') {
+                              var errList = [];
+                              for (var key in resp.errors) {
+                                  errList.push("Field [" + key + "]: " + resp.errors[key]);
+                              }
+                              errors = errList.join("\n");
+                          } else if (typeof resp.error === 'string') {
+                              errors = resp.error;
+                          } else if (resp.message) {
+                              errors = resp.message;
+                          }
 
-                        revertCard(cardId, el, sourceBoardId);
-                        alert(errors);
-                        //console.log(errors);
-                        el.style.opacity = '1';
-                        return;
-                    }
-					setTimeout(refreshKanbanBoard, 1000);
-				},
-				error: function(xhr) {
-					console.error("Failed to move card", xhr);
-					revertCard(cardId, el, sourceBoardId);
-					el.style.opacity = '1';
-				}
-			});
-		}
+                          revertCard(cardId, el, sourceBoardId);
+                          alert(errors);
+                          el.style.opacity = '1';
+                          return;
+                      }
+                  setTimeout(refreshKanbanBoard, 1000);
+               },
+               error: function(xhr) {
+                  console.error("Failed to move card", xhr);
+                  revertCard(cardId, el, sourceBoardId);
+                  el.style.opacity = '1';
+               }
+            });
+        }
 
 		function revertCard(cardId, el, sourceBoardId) {
 			var itemData = {

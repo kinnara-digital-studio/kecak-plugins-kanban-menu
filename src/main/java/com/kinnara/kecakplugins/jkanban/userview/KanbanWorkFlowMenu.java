@@ -10,13 +10,16 @@ import org.joget.apps.app.dao.FormDefinitionDao;
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.model.DatalistDefinition;
 import org.joget.apps.app.model.FormDefinition;
+import org.joget.apps.app.model.PackageActivityForm;
 import org.joget.apps.app.service.AppService;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.model.DataList;
 import org.joget.apps.datalist.model.DataListCollection;
 import org.joget.apps.datalist.service.DataListService;
 import org.joget.apps.form.model.Element;
+import org.joget.apps.form.model.Form;
 import org.joget.apps.form.model.FormData;
+import org.joget.apps.form.model.FormRowSet;
 import org.joget.apps.form.service.FormService;
 import org.joget.apps.form.service.FormUtil;
 import org.joget.apps.userview.lib.InboxMenu;
@@ -27,6 +30,7 @@ import org.joget.commons.util.SecurityUtil;
 import org.joget.directory.model.User;
 import org.joget.directory.model.service.DirectoryManager;
 import org.joget.plugin.base.PluginManager;
+import org.joget.plugin.base.PluginWebSupport;
 import org.joget.workflow.model.WorkflowActivity;
 import org.joget.workflow.model.WorkflowAssignment;
 import org.joget.workflow.model.WorkflowProcess;
@@ -36,10 +40,14 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class KanbanWorkFlowMenu extends UserviewMenu {
+public class KanbanWorkFlowMenu extends UserviewMenu implements PluginWebSupport {
 
     private static final String LABEL = "Kanban Workflow Menu";
 
@@ -367,5 +375,113 @@ public class KanbanWorkFlowMenu extends UserviewMenu {
 
     protected boolean isRunningProcessOnly() {
         return "true".equalsIgnoreCase(getPropertyString("isRunningProcessOnly"));
+    }
+
+    @Override
+    public void webService(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String action = request.getParameter("action");
+        if ("moveCard".equals(action)) {
+            handleMoveCard(request, response);
+        } else {
+            response.setStatus(404);
+        }
+    }
+
+    private void handleMoveCard(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        JSONObject result = new JSONObject();
+        response.setContentType("application/json");
+
+        try {
+            String activityId   = request.getParameter("activityId");
+            String targetStatus = request.getParameter("status");
+            String statusField  = request.getParameter("statusField");
+
+            ApplicationContext appContext = AppUtil.getApplicationContext();
+            WorkflowManager workflowManager = (WorkflowManager) appContext.getBean("workflowManager");
+            AppService appService = (AppService) appContext.getBean("appService");
+            WorkflowUserManager workflowUserManager = (WorkflowUserManager) appContext.getBean("workflowUserManager");
+            User currentUser = workflowUserManager.getCurrentUser();
+
+            // ── 1. Ambil assignment & validasi ──────────────────
+            WorkflowAssignment assignment = workflowManager.getAssignment(activityId);
+            if (assignment == null) {
+                result.put("error", "Assignment not found or already completed");
+                response.setStatus(400);
+                result.write(response.getWriter());
+                return;
+            }
+
+            WorkflowActivity runningActivity = workflowManager.getRunningActivityInfo(activityId);
+            boolean isAssignee = runningActivity != null &&
+                    Arrays.asList(runningActivity.getAssignmentUsers()).contains(currentUser.getUsername());
+            if (!isAssignee) {
+                result.put("error", "You are not the assignee of this activity");
+                response.setStatus(403);
+                result.write(response.getWriter());
+                return;
+            }
+
+            // ── 2. Siapkan AppDefinition & FormData ──────────────
+            AppDefinition appDefinition = appService.getAppDefinitionForWorkflowActivity(activityId);
+            AppUtil.setCurrentAppDefinition(appDefinition);
+
+            FormData formData = new FormData();
+            formData.setActivityId(assignment.getActivityId());
+            formData.setProcessId(assignment.getProcessId());
+
+            WorkflowProcess process = workflowManager.getProcess(assignment.getProcessId());
+            if (process != null) {
+                formData.setPrimaryKeyValue(process.getRecordId());
+            }
+
+            // ── 3. Ambil form assignment (otomatis load nilai lama via loadBinderData) ──
+            PackageActivityForm packageActivityForm = appService.viewAssignmentForm(appDefinition, assignment, formData, "");
+            if (packageActivityForm == null) {
+                result.put("error", "Assignment has not been mapped to a form");
+                response.setStatus(400);
+                result.write(response.getWriter());
+                return;
+            }
+            Form form = packageActivityForm.getForm();
+
+            // ── 4. Override HANYA field status ────────────────────────────
+            LogUtil.info(getClassName(), "targetStatus from request: [" + targetStatus + "]");
+            LogUtil.info(getClassName(), "statusField from request: [" + statusField + "]");
+            
+            Element statusElement = FormUtil.findElement(statusField, form, formData);
+            LogUtil.info(getClassName(), "statusElement found: " + (statusElement != null));
+            
+            if (statusElement != null) {
+                String parameterName = FormUtil.getElementParameterName(statusElement);
+                LogUtil.info(getClassName(), "parameterName: [" + parameterName + "]");
+                formData.addRequestParameterValues(parameterName, new String[]{targetStatus});
+                
+                // Cek ulang apakah value sudah masuk
+                String[] checkValues = formData.getRequestParameterValues(parameterName);
+                LogUtil.info(getClassName(), "value in formData after set: " + Arrays.toString(checkValues));
+            }
+
+            // ── 5. Complete assignment ─────────────────────────────
+            FormData resultFormData = appService.completeAssignmentForm(form, assignment, formData, new HashMap<>());
+
+            // ── 6. Cek validation error ─────────────────────────────
+            Map<String, String> errors = resultFormData.getFormErrors();
+            if (errors != null && !errors.isEmpty()) {
+                result.put("validation_error", new JSONObject(errors));
+                result.put("message", "Validation Error");
+                response.setStatus(200);
+                result.write(response.getWriter());
+                return;
+            }
+
+            result.put("status", "success");
+            response.setStatus(200);
+            result.write(response.getWriter());
+
+        } catch (Exception e) {
+            LogUtil.error(getClassName(), e, "Error moving card");
+            try { result.put("error", e.getMessage()); } catch (Exception ignored) {}
+            response.setStatus(500);
+        }
     }
 }
