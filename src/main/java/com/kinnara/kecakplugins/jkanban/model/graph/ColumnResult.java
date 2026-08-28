@@ -1,4 +1,4 @@
-package com.kinnara.kecakplugins.jkanban.kanban.graph;
+package com.kinnara.kecakplugins.jkanban.model.graph;
 
 public class ColumnResult {
     private String activityId;

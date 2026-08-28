@@ -1,4 +1,4 @@
-package com.kinnara.kecakplugins.jkanban.kanban.graph;
+package com.kinnara.kecakplugins.jkanban.model.graph;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.joget.commons.util.LogUtil;

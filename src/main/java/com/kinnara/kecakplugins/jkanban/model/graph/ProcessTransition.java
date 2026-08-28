@@ -1,4 +1,4 @@
-package com.kinnara.kecakplugins.jkanban.kanban.graph;
+package com.kinnara.kecakplugins.jkanban.model.graph;
 
 import java.util.ArrayList;
 import java.util.List;

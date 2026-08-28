@@ -1,8 +1,8 @@
 package com.kinnara.kecakplugins.jkanban.userview;
 
 import com.kinnara.kecakplugins.jkanban.datalist.KanbanWorkflowDataListBinder;
-import com.kinnara.kecakplugins.jkanban.model.KanbanBoard;
-import com.kinnara.kecakplugins.jkanban.model.KanbanCard;
+import com.kinnara.kecakplugins.jkanban.model.kanban.KanbanBoard;
+import com.kinnara.kecakplugins.jkanban.model.kanban.KanbanCard;
 import com.kinnarastudio.commons.Try;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.joget.apps.app.dao.DatalistDefinitionDao;
@@ -19,7 +19,6 @@ import org.joget.apps.datalist.service.DataListService;
 import org.joget.apps.form.model.Element;
 import org.joget.apps.form.model.Form;
 import org.joget.apps.form.model.FormData;
-import org.joget.apps.form.model.FormRowSet;
 import org.joget.apps.form.service.FormService;
 import org.joget.apps.form.service.FormUtil;
 import org.joget.apps.userview.lib.InboxMenu;

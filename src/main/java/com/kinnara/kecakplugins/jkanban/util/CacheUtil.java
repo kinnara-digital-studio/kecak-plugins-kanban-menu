@@ -1,4 +1,4 @@
-package com.kinnara.kecakplugins.jkanban.kanban;
+package com.kinnara.kecakplugins.jkanban.util;
 
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.Element;

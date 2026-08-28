@@ -1,10 +1,10 @@
 package com.kinnara.kecakplugins.jkanban.userview;
 
 import com.kinnara.kecakplugins.jkanban.datalist.KanbanWorkflowDataListBinder;
-import com.kinnara.kecakplugins.jkanban.kanban.CacheUtil;
-import com.kinnara.kecakplugins.jkanban.model.KanbanBoard;
-import com.kinnara.kecakplugins.jkanban.model.KanbanCard;
-import com.kinnara.kecakplugins.jkanban.kanban.graph.*;
+import com.kinnara.kecakplugins.jkanban.model.graph.*;
+import com.kinnara.kecakplugins.jkanban.util.CacheUtil;
+import com.kinnara.kecakplugins.jkanban.model.kanban.KanbanBoard;
+import com.kinnara.kecakplugins.jkanban.model.kanban.KanbanCard;
 import com.kinnarastudio.commons.Try;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.joget.apps.app.dao.DatalistDefinitionDao;

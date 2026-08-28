@@ -1,4 +1,4 @@
-package com.kinnara.kecakplugins.jkanban.model;
+package com.kinnara.kecakplugins.jkanban.model.kanban;
 
 public class KanbanCard {
 
