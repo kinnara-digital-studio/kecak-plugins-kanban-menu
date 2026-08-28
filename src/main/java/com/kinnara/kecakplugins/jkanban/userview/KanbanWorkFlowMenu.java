@@ -408,6 +408,7 @@ public class KanbanWorkFlowMenu extends UserviewMenu implements PluginWebSupport
                 result.put("error", "Assignment not found or already completed");
                 response.setStatus(400);
                 result.write(response.getWriter());
+                LogUtil.warn(getClassName(), "Assignment not found or already completed");
                 return;
             }
 
@@ -418,6 +419,7 @@ public class KanbanWorkFlowMenu extends UserviewMenu implements PluginWebSupport
                 result.put("error", "You are not the assignee of this activity");
                 response.setStatus(403);
                 result.write(response.getWriter());
+                LogUtil.warn(getClassName(), "You are not the assignee of this activity");
                 return;
             }
 
@@ -440,25 +442,24 @@ public class KanbanWorkFlowMenu extends UserviewMenu implements PluginWebSupport
                 result.put("error", "Assignment has not been mapped to a form");
                 response.setStatus(400);
                 result.write(response.getWriter());
+                LogUtil.warn(getClassName(), "Assignment has not been mapped to a form");
                 return;
             }
             Form form = packageActivityForm.getForm();
 
             // ── 4. Override HANYA field status ────────────────────────────
-            LogUtil.info(getClassName(), "targetStatus from request: [" + targetStatus + "]");
-            LogUtil.info(getClassName(), "statusField from request: [" + statusField + "]");
+//            LogUtil.info(getClassName(), "targetStatus from request: [" + targetStatus + "]");
+//            LogUtil.info(getClassName(), "statusField from request: [" + statusField + "]");
             
             Element statusElement = FormUtil.findElement(statusField, form, formData);
-            LogUtil.info(getClassName(), "statusElement found: " + (statusElement != null));
+//            LogUtil.info(getClassName(), "statusElement found: " + (statusElement != null));
             
             if (statusElement != null) {
                 String parameterName = FormUtil.getElementParameterName(statusElement);
-                LogUtil.info(getClassName(), "parameterName: [" + parameterName + "]");
+//                LogUtil.info(getClassName(), "parameterName: [" + parameterName + "]");
                 formData.addRequestParameterValues(parameterName, new String[]{targetStatus});
-                
-                // Cek ulang apakah value sudah masuk
-                String[] checkValues = formData.getRequestParameterValues(parameterName);
-                LogUtil.info(getClassName(), "value in formData after set: " + Arrays.toString(checkValues));
+//                String[] checkValues = formData.getRequestParameterValues(parameterName);
+//                LogUtil.info(getClassName(), "value in formData after set: " + Arrays.toString(checkValues));
             }
 
             // ── 5. Complete assignment ─────────────────────────────
@@ -480,7 +481,6 @@ public class KanbanWorkFlowMenu extends UserviewMenu implements PluginWebSupport
 
         } catch (Exception e) {
             LogUtil.error(getClassName(), e, "Error moving card");
-            try { result.put("error", e.getMessage()); } catch (Exception ignored) {}
             response.setStatus(500);
         }
     }
