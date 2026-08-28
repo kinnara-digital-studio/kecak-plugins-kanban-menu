@@ -135,7 +135,7 @@
 				var boardId = board.value;
 
 				var sortedCards = board.cards.slice().sort(function(a, b) {
-					return (b.isEditable ? 1 : 0) - (a.isEditable ? 1 : 0);
+					return (b.canDrag ? 1 : 0) - (a.canDrag ? 1 : 0);
 				});
 
 				var items = sortedCards.map(function(card, index) {
@@ -149,11 +149,11 @@
 						formDefId: card.formDefId || ""
 					};
 
-					var iconHtml = card.isEditable 
+					var iconHtml = card.canDrag
 						  ? "<i class='fas fa-pencil-alt card-icon' title='Edit'></i>" 
 						  : "<i class='fas fa-eye card-icon' title='View'></i>";
 
-					var cardClass = card.isEditable ? "kanban-item-editable" : "kanban-item-readonly";
+					var cardClass = card.canDrag ? "kanban-item-editable" : "kanban-item-readonly";
 
 					var html = "";
 					html += "<div class='card-title'>";
@@ -301,23 +301,38 @@
 			popupForm(cardId, appId, appVersion, formRaw, nonce, args, data, height, width, cardData.isEditable);
 		}
 
+<<<<<<< HEAD
 		function moveCard(cardId, targetBoardId, sourceBoardId, el) {
 			var entry = cardFormMap[cardId] || {};
 			var activityId = entry.activityId || "";
 			var formDefId = entry.formDefId || "";
+=======
+        function moveCard(cardId, targetBoardId, sourceBoardId, el) {
+            var entry = cardFormMap[cardId] || {};
+            var activityId = entry.activityId || "";
+>>>>>>> add_errorfield
 
-			if (!entry.canDrag || !activityId) {
-				alert("This Card Cannot Move, No Assignee or No Activity yet");
-				revertCard(cardId, el, sourceBoardId);
-				return;
-			}
+            if (!entry.canDrag || !activityId) {
+               alert("This Card Cannot Move, No Assignee or No Activity yet");
+               revertCard(cardId, el, sourceBoardId);
+               return;
+            }
 
+<<<<<<< HEAD
 			var submitUrl = "${request.contextPath}/web/json/data/assignment/" + activityId;
             var loadUrl = "${request.contextPath}/web/json/data/app/${appId}/form/" + formDefId + "/" + cardId;
+=======
+            var submitUrl = "${request.contextPath}/web/json/app/${appId}/${appVersion}/plugin/${className}/service"
+                + "?action=moveCard"
+                + "&activityId=" + encodeURIComponent(activityId)
+                + "&status=" + encodeURIComponent(targetBoardId)
+                + "&statusField=" + encodeURIComponent("${statusField!'status'}");
+>>>>>>> add_errorfield
 
-			el.style.opacity = '0.5';
+            el.style.opacity = '0.5';
 
             jQuery.ajax({
+<<<<<<< HEAD
                 url: loadUrl,
                 method: "GET",
                 dataType: "json",
@@ -384,6 +399,48 @@
                 }
             });
 		}
+=======
+               url: submitUrl,
+               method: "POST",
+               dataType: "json",
+               success: function(resp) {
+                  var isError = resp.validation_error || resp.status === "error" || resp.error || (resp.errors && Object.keys(resp.errors).length > 0);
+                      if (isError) {
+                          var errors = "Error occurred";
+
+                          if (resp.validation_error) {
+                              var errList = [];
+                              for (var key in resp.validation_error) {
+                                  errList.push("Field [" + key + "]: " + resp.validation_error[key]);
+                              }
+                              errors = errList.join("\n");
+                          } else if (resp.errors && typeof resp.errors === 'object') {
+                              var errList = [];
+                              for (var key in resp.errors) {
+                                  errList.push("Field [" + key + "]: " + resp.errors[key]);
+                              }
+                              errors = errList.join("\n");
+                          } else if (typeof resp.error === 'string') {
+                              errors = resp.error;
+                          } else if (resp.message) {
+                              errors = resp.message;
+                          }
+
+                          revertCard(cardId, el, sourceBoardId);
+                          alert(errors);
+                          el.style.opacity = '1';
+                          return;
+                      }
+                  setTimeout(refreshKanbanBoard, 1000);
+               },
+               error: function(xhr) {
+                  console.error("Failed to move card", xhr);
+                  revertCard(cardId, el, sourceBoardId);
+                  el.style.opacity = '1';
+               }
+            });
+        }
+>>>>>>> add_errorfield
 
 		function revertCard(cardId, el, sourceBoardId) {
 			var itemData = {
